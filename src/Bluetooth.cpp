@@ -1,6 +1,6 @@
 #include "Bluetooth.h"
 #include "BluetoothPacket.h"
-#include "PwmDriver.h"
+#include "HardwareController.h"
 #include <Arduino.h>
 #include <NimBLEDevice.h>
 #include <cstring>
@@ -73,7 +73,7 @@ void Bluetooth::loop()
         Serial.printf("Target Pin: %d\n", rxData.pin_num);
         Serial.printf("State Set: %d\n", rxData.duty);
         Serial.println("-----------------------------------");
-        PwmDriver::updateDuty(rxData.pin_num, rxData.duty);
+        HardwareController::setRemoteDuty(rxData.pin_num, rxData.duty);
     }
     if (deviceConnected)
     {

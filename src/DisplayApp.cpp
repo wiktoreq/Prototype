@@ -32,8 +32,6 @@ static Screen* currentScreen = &mainMenu;
 static bool touchWasActive = false;
 
 static void switchToState(AppState newState);
-static void updateBrightnessHardware(uint8_t screenBrightness, uint8_t lightBrightness);
-static void updateActuatorHardware(uint8_t movementSpeed, bool contracting, bool retracting);
 static void touch_calibrate();
 
 // Maps a tab index to its content screen and draws that screen.
@@ -52,19 +50,6 @@ static void switchToState(AppState newState) {
             break;
     }
     currentScreen->draw();
-}
-
-// Placeholder for later hardware work: screen and external-light brightness.
-static void updateBrightnessHardware(uint8_t screenBrightness, uint8_t lightBrightness) {
-    (void)screenBrightness;
-    (void)lightBrightness;
-}
-
-// Placeholder for later hardware work: actuator speed plus hold-buttons.
-static void updateActuatorHardware(uint8_t movementSpeed, bool contracting, bool retracting) {
-    (void)movementSpeed;
-    (void)contracting;
-    (void)retracting;
 }
 
 // Loads stored touch calibration or runs the on-screen calibration wizard.
@@ -162,23 +147,24 @@ void DisplayApp::loop() {
             }
         } else {
             currentScreen->handleTouch(touchX, touchY);
-
-            if (currentState == STATE_MAIN) {
-                updateBrightnessHardware(mainMenu.getScreenBrightness(),
-                                         mainMenu.getLightBrightness());
-            } else if (currentState == STATE_HEIGHT) {
-                updateActuatorHardware(heightMenu.getSpeed(),
-                                       heightMenu.isContractPressed(),
-                                       heightMenu.isRetractPressed());
-            } else if (currentState == STATE_POSITION) {
-                updateActuatorHardware(positionMenu.getSpeed(),
-                                       positionMenu.isContractPressed(),
-                                       positionMenu.isRetractPressed());
-            }
         }
         touchWasActive = true;
     } else if (touchWasActive) {
         currentScreen->handleRelease();
         touchWasActive = false;
     }
+}
+
+UiControlState DisplayApp::getControlState() {
+    UiControlState state;
+    state.screen = static_cast<UiControlState::Screen>(currentState);
+    state.screenBrightness = mainMenu.getScreenBrightness();
+    state.lightBrightness = mainMenu.getLightBrightness();
+    state.heightSpeed = heightMenu.getSpeed();
+    state.heightContracting = (currentState == STATE_HEIGHT) && heightMenu.isContractPressed();
+    state.heightRetracting = (currentState == STATE_HEIGHT) && heightMenu.isRetractPressed();
+    state.positionSpeed = positionMenu.getSpeed();
+    state.positionContracting = (currentState == STATE_POSITION) && positionMenu.isContractPressed();
+    state.positionRetracting = (currentState == STATE_POSITION) && positionMenu.isRetractPressed();
+    return state;
 }

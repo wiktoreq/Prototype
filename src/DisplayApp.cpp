@@ -170,7 +170,7 @@ void DisplayApp::loop() {
                 updateActuatorHardware(heightMenu.getSpeed(),
                                        heightMenu.isContractPressed(),
                                        heightMenu.isRetractPressed());
-            } else {
+            } else if (currentState == STATE_POSITION) {
                 updateActuatorHardware(positionMenu.getSpeed(),
                                        positionMenu.isContractPressed(),
                                        positionMenu.isRetractPressed());

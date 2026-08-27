@@ -1,0 +1,71 @@
+Keep DisplayApp as UI only. Do not fill in updateActuatorHardware / updateBrightnessHardware there.
+
+Those two functions are empty placeholders called from DisplayApp::loop() after a content-area touch. They are the wrong place for PWM, GPIO, backlight, or BLE. DisplayApp should keep doing what it already does: init the TFT, calibrate touch, switch tabs, and route touches to TopMenu / the active Screen. Screens already own the knob and button state. Hardware should consume that state from a separate layer.
+
+What already exists
+-------------------
+- MainMenu exposes getScreenBrightness() and getLightBrightness() (0-100).
+- ActuatorMenu exposes getSpeed() (0-100), isContractPressed(), and isRetractPressed().
+- PwmDriver already owns the two actuator PWM channels (pins 13 and 21).
+- Bluetooth::loop() already writes those same PWM channels from received packets.
+- GpioInputs currently only configures GPIO 9 and 10; it does not read them yet.
+- main.cpp is already the combined front-end / back-end entry point: Bluetooth::loop() then DisplayApp::loop().
+
+The screens update themselves. ActuatorMenu::handleTouch() moves the speed knob and latches CONTRACT/RETRACT while the finger is inside the button. handleRelease() clears both pressed flags. MainMenu does the same for the two brightness knobs. DisplayApp does not need to interpret touches as hardware commands.
+
+Where hardware should live
+--------------------------
+Add a small coordinator next to DisplayApp, not inside it. A name like HardwareController, HardwareBridge, or ActuatorControl is fine. Call it from main.cpp after DisplayApp::loop() so UI state is current, then apply outputs through the existing drivers (PwmDriver today; a brightness/backlight helper later).
+
+DisplayApp.cpp should not #include PwmDriver.h, Pins.h, or Bluetooth.h. The coordinator is the only place that maps UI values onto pins.
+
+Polling is the simplest fit for this Arduino loop. Every pass:
+
+1. DisplayApp::loop() updates screen state from touch (and clears buttons on lift / tab change).
+2. The coordinator reads the active screen's getters.
+3. It writes hardware only when the commanded output actually changed.
+
+Callbacks are optional. If you want screens to push events ("speed changed", "contract pressed/released"), keep the callbacks hardware-free: they should notify the coordinator, not call PwmDriver. Polling is enough for hold-buttons because you must re-evaluate them every loop anyway.
+
+Do not only update hardware while a finger is down
+--------------------------------------------------
+Today the placeholders run only inside `if (touched)`. That is incomplete for hold-buttons. CONTRACT/RETRACT must stop when the finger lifts or leaves the button, and when the user switches tabs (handleRelease() already clears the flags). If hardware is only written during a touch, the actuator never gets the "off" command.
+
+Run the coordinator every loop iteration, including untouched frames. Typical Height/Position mapping:
+
+- Neither button pressed: both PWM duties 0 (or coast/brake, depending on the driver).
+- CONTRACT held: drive the contract channel at speed, other channel 0.
+- RETRACT held: the reverse.
+- Speed knob only changes how hard the held button drives; it should not move an actuator by itself.
+
+Map slider 0-100 onto PwmDriver's 0-255 duty in that coordinator (or inside PwmDriver), not in DisplayApp.
+
+Brightness knobs
+----------------
+Same split: MainMenu keeps 0-100 UI values. A brightness helper (not DisplayApp) applies them. Screen brightness is typically backlight PWM; the external light needs its own output. There is no backlight pin in platformio.ini yet, so that helper can stay a stub until the pin/driver is chosen. Still keep the stub out of DisplayApp.
+
+Physical GPIO vs on-screen widgets
+----------------------------------
+On-screen knobs/buttons are already handled by the menus. If GPIO 9/10 later become real buttons or a physical knob, read them in GpioInputs (or a dedicated input module) and feed the same coordinator. Do not poll GPIO from DisplayApp.
+
+Bluetooth vs local UI
+---------------------
+Bluetooth and the touch UI both want PwmDriver. Resolve that in the hardware layer, not in DisplayApp. Decide a policy (for example: local hold-buttons win while pressed; otherwise last BLE duty stands) and implement it where PWM is written so the two paths cannot fight.
+
+Suggested ownership
+-------------------
+- Screen / ActuatorMenu / MainMenu: hit-testing, drawing, knob values, pressed flags.
+- DisplayApp: TFT, tabs, touch dispatch. No pin writes.
+- PwmDriver / future brightness driver: the actual outputs.
+- Coordinator called from main.cpp: read UI (and later GPIO), apply policy, call drivers.
+
+You can delete the DisplayApp placeholders once the coordinator exists, or leave them empty and unused. Do not grow them into real hardware.
+
+Practical sequence
+------------------
+1. Add a coordinator module with a loop() that reads the active menu's getters.
+2. Call it from main.cpp after DisplayApp::loop().
+3. Drive actuators through PwmDriver; stop on release and on leaving Height/Position.
+4. Apply brightness through a dedicated helper when those outputs exist.
+5. Keep BLE PWM going through the same hardware module so UI and radio share one policy.
+6. Leave DisplayApp focused on the display.

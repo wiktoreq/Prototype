@@ -51,6 +51,7 @@ void PwmDriver::updateDuty(uint8_t pin_num, uint8_t duty)
     case PIN_ACTUATOR_B:
         ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, duty);
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+        break;
     default:
         break;
     }

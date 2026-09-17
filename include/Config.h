@@ -19,8 +19,11 @@ constexpr int16_t SLIDER_TRACK_H   = 14;
 constexpr int16_t SLIDER_KNOB_R    = 16;
 constexpr int16_t TOUCH_HYSTERESIS = 3;
 
-// Main menu: one external-light card filling the content area
-constexpr int16_t MAIN_CARD_H = CONTENT_H - PAD * 2;
+// Main menu: external-light slider above Sleep and Mute buttons
+constexpr int16_t MAIN_CARD_H = 96;
+constexpr int16_t MAIN_BTN_Y  = CONTENT_Y + PAD + MAIN_CARD_H + GAP;
+constexpr int16_t MAIN_BTN_H  = (CONTENT_Y + CONTENT_H) - PAD - MAIN_BTN_Y;
+constexpr int16_t MAIN_BTN_W  = (TFT_W - PAD * 2 - GAP) / 2;
 
 // Actuator menus: speed card on top, two large hold-buttons below
 constexpr int16_t ACT_SLIDER_CARD_H = 96;

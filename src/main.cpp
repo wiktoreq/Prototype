@@ -23,5 +23,4 @@ void loop()
     Bluetooth::loop();
     GpioInputs::loop();
     DisplayApp::loop();
-    HardwareController::apply(DisplayApp::getControlState());
 }

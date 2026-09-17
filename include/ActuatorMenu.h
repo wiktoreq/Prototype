@@ -5,11 +5,17 @@
 #include "UiWidgets.h"
 
 class ActuatorMenu : public Screen {
+public:
+    using SliderEventHandler = void (*)(uint8_t value);
+    using DirectionEventHandler = void (*)(bool contracting, bool retracting);
+
 private:
     TFT_eSPI* tft;
     HorizontalSlider speedSlider;
     TouchButton contractBtn;
     TouchButton retractBtn;
+    SliderEventHandler speedChangedHandler;
+    DirectionEventHandler directionChangedHandler;
 
     enum DragTarget {
         DRAG_NONE = 0,
@@ -28,6 +34,10 @@ private:
 public:
     // Binds this actuator screen to the shared TFT driver.
     ActuatorMenu(TFT_eSPI* tftInstance);
+
+    // Registers speed and direction hardware event handlers.
+    void setEventHandlers(SliderEventHandler onSpeedChanged,
+                          DirectionEventHandler onDirectionChanged);
 
     // Sets default speed and lays out the speed slider plus action buttons.
     void init() override;

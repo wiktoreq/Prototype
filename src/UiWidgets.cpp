@@ -201,7 +201,8 @@ void UiWidgets::pushButton(const TouchButton& btn) {
     buttonSprite->loadFont(consolab24);
     buttonSprite->setTextDatum(MC_DATUM);
     buttonSprite->setTextColor(fg, bg);
-    buttonSprite->drawString(btn.label, cx, btn.h - 32);
+    const int16_t labelY = btn.icon == ICON_NONE ? btn.h / 2 : btn.h - 32;
+    buttonSprite->drawString(btn.label, cx, labelY);
     buttonSprite->unloadFont();
 
     buttonSprite->pushSprite(btn.x, btn.y);

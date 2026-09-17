@@ -101,6 +101,15 @@ void DisplayApp::setup() {
     tft.setRotation(3);
     tft.fillScreen(COLOR_BG);
 
+    GpioInputs::setDisplaySleepHandlers(DisplayApp::sleepOn, DisplayApp::sleepOff);
+    mainMenu.setEventHandlers(HardwareController::setLightBrightness,
+                              HardwareController::toggleSleep,
+                              HardwareController::toggleMute);
+    heightMenu.setEventHandlers(HardwareController::setHeightSpeed,
+                                HardwareController::setHeightDirection);
+    positionMenu.setEventHandlers(HardwareController::setPositionSpeed,
+                                  HardwareController::setPositionDirection);
+
     UiWidgets::init(&tft);
 
     if (REPEAT_CAL) {

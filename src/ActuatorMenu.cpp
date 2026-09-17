@@ -2,7 +2,17 @@
 
 // Binds this actuator screen to the shared TFT driver.
 ActuatorMenu::ActuatorMenu(TFT_eSPI* tftInstance)
-    : tft(tftInstance), dragTarget(DRAG_NONE) {}
+    : tft(tftInstance),
+      speedChangedHandler(nullptr),
+      directionChangedHandler(nullptr),
+      dragTarget(DRAG_NONE) {}
+
+// Registers speed and direction hardware event handlers.
+void ActuatorMenu::setEventHandlers(SliderEventHandler onSpeedChanged,
+                                    DirectionEventHandler onDirectionChanged) {
+    speedChangedHandler = onSpeedChanged;
+    directionChangedHandler = onDirectionChanged;
+}
 
 // Places the speed card and the two actuator buttons in the content area.
 void ActuatorMenu::layoutControls() {
@@ -47,6 +57,9 @@ void ActuatorMenu::setButtonPressed(TouchButton& btn, bool pressed) {
     if (btn.pressed == pressed) return;
     btn.pressed = pressed;
     UiWidgets::pushButton(btn);
+    if (directionChangedHandler != nullptr) {
+        directionChangedHandler(contractBtn.pressed, retractBtn.pressed);
+    }
 }
 
 // Sets default speed and lays out the speed slider plus action buttons.
@@ -93,6 +106,9 @@ void ActuatorMenu::handleTouch(int16_t touchX, int16_t touchY) {
         if (UiWidgets::handleSliderTouch(speedSlider, touchX)) {
             UiWidgets::updateSlider(speedSlider);
             UiWidgets::pushValue(speedSlider);
+            if (speedChangedHandler != nullptr) {
+                speedChangedHandler(speedSlider.value);
+            }
         }
         return;
     }

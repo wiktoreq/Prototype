@@ -6,6 +6,8 @@
 #include "SPIFFS.h"
 #include "ActuatorMenu.h"
 #include "Config.h"
+#include "GpioInputs.h"
+#include "HardwareController.h"
 #include "MainMenu.h"
 #include "TopMenu.h"
 #include "UiControlState.h"

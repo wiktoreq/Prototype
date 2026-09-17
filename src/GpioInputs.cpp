@@ -12,12 +12,15 @@ bool ledToggleHandled = false;
 bool monitoringMuteFlag = false;
 bool monitorSleepFlag = false;
 bool isAsleep = false;
+bool uiActuator24VA = false;
+bool uiActuator24VB = false;
+bool uiActuator12VA = false;
+bool uiActuator12VB = false;
+GpioInputs::DisplayAction displaySleepOn = nullptr;
+GpioInputs::DisplayAction displaySleepOff = nullptr;
 
-void writeExclusivePair(uint8_t inputA, uint8_t inputB, uint8_t outputA, uint8_t outputB)
+void applyExclusivePair(bool requestA, bool requestB, uint8_t outputA, uint8_t outputB)
 {
-    const bool requestA = digitalRead(inputA) == HIGH;
-    const bool requestB = digitalRead(inputB) == HIGH;
-
     if (requestA == requestB) {
         digitalWrite(outputA, LOW);
         digitalWrite(outputB, LOW);
@@ -28,6 +31,18 @@ void writeExclusivePair(uint8_t inputA, uint8_t inputB, uint8_t outputA, uint8_t
         digitalWrite(outputA, LOW);
         digitalWrite(outputB, HIGH);
     }
+}
+
+void writeExclusivePair(uint8_t inputA,
+                        uint8_t inputB,
+                        uint8_t outputA,
+                        uint8_t outputB,
+                        bool uiRequestA,
+                        bool uiRequestB)
+{
+    const bool requestA = digitalRead(inputA) == HIGH || uiRequestA;
+    const bool requestB = digitalRead(inputB) == HIGH || uiRequestB;
+    applyExclusivePair(requestA, requestB, outputA, outputB);
 }
 
 void updateLedDuty()
@@ -50,7 +65,7 @@ void updateLedDuty()
                 rememberedLed12VDuty = led12VDuty;
                 led12VDuty = 0;
             }
-            PwmDriver::updateDuty(LED12V_PWM, led12VDuty);
+            GpioInputs::setLedDuty(led12VDuty);
             ledToggleHandled = true;
         }
         return;
@@ -67,47 +82,86 @@ void updateLedDuty()
     }
 
     if (newDuty != led12VDuty) {
-        led12VDuty = newDuty;
-        PwmDriver::updateDuty(LED12V_PWM, led12VDuty);
+        GpioInputs::setLedDuty(newDuty);
     }
 }
 
 void updateMute()
 {
     if (digitalRead(MUTE_COM) == HIGH) {
-        Serial.println("Mute button pressed");
         monitoringMuteFlag = true;
         return;
     }
 
     if (monitoringMuteFlag && digitalRead(MUTE_COM) == LOW) {
         monitoringMuteFlag = false;
-        digitalWrite(MIC_PHANTOM, digitalRead(MIC_PHANTOM) == HIGH ? LOW : HIGH);
-        digitalWrite(MUTE_LED, digitalRead(MUTE_LED) == HIGH ? LOW : HIGH);
+        GpioInputs::toggleMute();
     }
 }
 
 void updateSleep()
 {
     if (digitalRead(SLEEP_COM) == HIGH) {
-        Serial.println("Sleep button pressed");
         monitorSleepFlag = true;
         return;
     }
 
     if (monitorSleepFlag && digitalRead(SLEEP_COM) == LOW) {
         monitorSleepFlag = false;
-        isAsleep = !isAsleep;
-        if (isAsleep) {
-            DisplayApp::sleepOn();
-            digitalWrite(SLEEP_LED, HIGH);
-        } else {
-            DisplayApp::sleepOff();
-            digitalWrite(SLEEP_LED, LOW);
-        }
+        GpioInputs::toggleSleep();
     }
 }
 
+}
+
+void GpioInputs::setDisplaySleepHandlers(DisplayAction sleepOn, DisplayAction sleepOff)
+{
+    displaySleepOn = sleepOn;
+    displaySleepOff = sleepOff;
+}
+
+void GpioInputs::toggleMute()
+{
+    digitalWrite(MIC_PHANTOM, digitalRead(MIC_PHANTOM) == HIGH ? LOW : HIGH);
+    digitalWrite(MUTE_LED, digitalRead(MUTE_LED) == HIGH ? LOW : HIGH);
+}
+
+void GpioInputs::toggleSleep()
+{
+    isAsleep = !isAsleep;
+    if (isAsleep) {
+        if (displaySleepOn != nullptr) {
+            displaySleepOn();
+        }
+        digitalWrite(SLEEP_LED, HIGH);
+    } else {
+        if (displaySleepOff != nullptr) {
+            displaySleepOff();
+        }
+        digitalWrite(SLEEP_LED, LOW);
+    }
+}
+
+void GpioInputs::setLedDuty(uint8_t duty)
+{
+    led12VDuty = duty;
+    PwmDriver::updateDuty(LED12V_PWM, led12VDuty);
+}
+
+void GpioInputs::setActuator24VDirection(bool requestA, bool requestB)
+{
+    uiActuator24VA = requestA;
+    uiActuator24VB = requestB;
+    writeExclusivePair(POJ_1_A, POJ_1_B, ACTUATOR_A_24V, ACTUATOR_B_24V,
+                       uiActuator24VA, uiActuator24VB);
+}
+
+void GpioInputs::setActuator12VDirection(bool requestA, bool requestB)
+{
+    uiActuator12VA = requestA;
+    uiActuator12VB = requestB;
+    writeExclusivePair(POJ_2_A, POJ_2_B, ACTUATOR_A_12V, ACTUATOR_B_12V,
+                       uiActuator12VA, uiActuator12VB);
 }
 
 void GpioInputs::configure()
@@ -143,18 +197,27 @@ void GpioInputs::configure()
     digitalWrite(ACTUATOR_B_12V, LOW);
     digitalWrite(MUTE_LED, LOW);
     digitalWrite(MIC_PHANTOM, LOW);
+    digitalWrite(SLEEP_LED, LOW);
 
     led12VDuty = 255;
     rememberedLed12VDuty = 255;
     ledButtonsHeld = false;
     ledToggleHandled = false;
     monitoringMuteFlag = false;
+    monitorSleepFlag = false;
+    isAsleep = false;
+    uiActuator24VA = false;
+    uiActuator24VB = false;
+    uiActuator12VA = false;
+    uiActuator12VB = false;
 }
 
 void GpioInputs::loop()
 {
-    writeExclusivePair(POJ_1_A, POJ_1_B, ACTUATOR_A_24V, ACTUATOR_B_24V);
-    writeExclusivePair(POJ_2_A, POJ_2_B, ACTUATOR_A_12V, ACTUATOR_B_12V);
+    writeExclusivePair(POJ_1_A, POJ_1_B, ACTUATOR_A_24V, ACTUATOR_B_24V,
+                       uiActuator24VA, uiActuator24VB);
+    writeExclusivePair(POJ_2_A, POJ_2_B, ACTUATOR_A_12V, ACTUATOR_B_12V,
+                       uiActuator12VA, uiActuator12VB);
     updateLedDuty();
     updateMute();
     updateSleep();

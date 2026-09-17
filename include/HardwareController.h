@@ -1,20 +1,24 @@
 #pragma once
 #include <stdint.h>
-#include "BrightnessDriver.h"
+#include "GpioInputs.h"
 #include "Pins.h"
 #include "PwmDriver.h"
 #include "UiControlState.h"
 
 namespace HardwareController
 {
-    // Applies initial external-light state. Call after DisplayApp::setup().
+    // Applies initial slider values and stopped directions after UI setup.
     void configure(const UiControlState& ui);
 
-    // Maps current knob/button state onto PWM and external-light drivers.
-    // Call every loop after DisplayApp::loop(), including untouched frames.
-    void apply(const UiControlState& ui);
+    // Touchscreen event handlers.
+    void setLightBrightness(uint8_t brightness);
+    void toggleMute();
+    void toggleSleep();
+    void setHeightSpeed(uint8_t speed);
+    void setHeightDirection(bool contracting, bool retracting);
+    void setPositionSpeed(uint8_t speed);
+    void setPositionDirection(bool contracting, bool retracting);
 
-    // BLE requested duty for an actuator PWM pin. Applied immediately unless
-    // the local UI currently owns that pin (a hold-button is pressed).
+    // Applies a BLE-requested PWM duty immediately.
     void setRemoteDuty(uint8_t pin, uint8_t duty);
 }

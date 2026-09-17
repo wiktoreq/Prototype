@@ -89,7 +89,6 @@ void updateLedDuty()
 void updateMute()
 {
     if (digitalRead(MUTE_COM) == HIGH) {
-        Serial.println("Mute button pressed");
         monitoringMuteFlag = true;
         return;
     }
@@ -103,7 +102,6 @@ void updateMute()
 void updateSleep()
 {
     if (digitalRead(SLEEP_COM) == HIGH) {
-        Serial.println("Sleep button pressed");
         monitorSleepFlag = true;
         return;
     }

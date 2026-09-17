@@ -4,6 +4,7 @@
 
 static ledc_channel_config_t ledc_channel_1 = {};
 static ledc_channel_config_t ledc_channel_2 = {};
+static ledc_channel_config_t ledc_channel_3 = {};
 static ledc_timer_config_t ledc_timer = {};
 
 void PwmDriver::configure()
@@ -22,7 +23,7 @@ void PwmDriver::configure()
     ledc_channel_1.channel = LEDC_CHANNEL_0;
     ledc_channel_1.intr_type = LEDC_INTR_DISABLE;
     ledc_channel_1.timer_sel = LEDC_TIMER_0;
-    ledc_channel_1.duty = 0;                         // Start at 0% speed
+    ledc_channel_1.duty = 255;                         // Start at 100% speed
     ledc_channel_1.hpoint = 0;
     ledc_channel_1.gpio_num = ACTUATOR_PWM_24V;        // Output to Driver PWM Pin A
 
@@ -33,11 +34,22 @@ void PwmDriver::configure()
     ledc_channel_2.channel = LEDC_CHANNEL_1;
     ledc_channel_2.intr_type = LEDC_INTR_DISABLE;
     ledc_channel_2.timer_sel = LEDC_TIMER_0;
-    ledc_channel_2.duty = 0;                         // Start at 0% speed
+    ledc_channel_2.duty = 255;                         // Start at 100% speed
     ledc_channel_2.hpoint = 0;
     ledc_channel_2.gpio_num = ACTUATOR_PWM_12V;        // Output to Driver PWM Pin B
 
     ledc_channel_config(&ledc_channel_2);
+
+    // 4. Configure Channel 3 (Actuator 3 / Speed Signal C)
+    ledc_channel_3.speed_mode = LEDC_LOW_SPEED_MODE;
+    ledc_channel_3.channel = LEDC_CHANNEL_2;
+    ledc_channel_3.intr_type = LEDC_INTR_DISABLE;
+    ledc_channel_3.timer_sel = LEDC_TIMER_0;
+    ledc_channel_3.duty = 255;                         // Start at 100% speed
+    ledc_channel_3.hpoint = 0;
+    ledc_channel_3.gpio_num = LED12V_PWM;        // Output to Driver PWM Pin C
+
+    ledc_channel_config(&ledc_channel_3);
 }
 
 void PwmDriver::updateDuty(uint8_t pin_num, uint8_t duty)
@@ -51,6 +63,10 @@ void PwmDriver::updateDuty(uint8_t pin_num, uint8_t duty)
     case ACTUATOR_PWM_12V:
         ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, duty);
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+        break;
+    case LED12V_PWM:
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2, duty);
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_2);
         break;
     default:
         break;

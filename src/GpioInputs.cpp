@@ -24,6 +24,8 @@ void GpioInputs::configure()
 
     pinMode(ACTUATOR_A_12V, OUTPUT);
     pinMode(ACTUATOR_B_12V, OUTPUT);
-    
+
     pinMode(LED12V_PWM, OUTPUT);
+
+    pinMode(MIC_PHANTOM, OUTPUT);
 }

@@ -30,4 +30,7 @@ constexpr uint8_t ACTUATOR_B_12V = 36;
 constexpr uint8_t ACTUATOR_PWM_12V = 2;
 
 //LED 12V
-constexpr uint8_t LED12V_PWM = 48;
+constexpr uint8_t LED12V_PWM = 13;
+
+//Microphone phantom
+constexpr uint8_t MIC_PHANTOM = 48;

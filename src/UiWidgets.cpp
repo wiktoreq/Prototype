@@ -52,19 +52,6 @@ void UiWidgets::drawCard(TFT_eSPI* tft, int16_t x, int16_t y, int16_t w, int16_t
     tft->drawRoundRect(x, y, w, h, CARD_RADIUS, COLOR_TRACK);
 }
 
-// Draws a small sun glyph used as the screen-brightness icon.
-void UiWidgets::drawSunIcon(TFT_eSPI* tft, int16_t cx, int16_t cy, uint16_t color) {
-    tft->fillCircle(cx, cy, 7, color);
-    tft->drawLine(cx, cy - 14, cx, cy - 10, color);
-    tft->drawLine(cx, cy + 10, cx, cy + 14, color);
-    tft->drawLine(cx - 14, cy, cx - 10, cy, color);
-    tft->drawLine(cx + 10, cy, cx + 14, cy, color);
-    tft->drawLine(cx - 10, cy - 10, cx - 7, cy - 7, color);
-    tft->drawLine(cx + 7, cy + 7, cx + 10, cy + 10, color);
-    tft->drawLine(cx - 10, cy + 10, cx - 7, cy + 7, color);
-    tft->drawLine(cx + 7, cy - 7, cx + 10, cy - 10, color);
-}
-
 // Draws a small lamp glyph used as the external-light icon.
 void UiWidgets::drawLampIcon(TFT_eSPI* tft, int16_t cx, int16_t cy, uint16_t color) {
     tft->fillCircle(cx, cy - 3, 8, color);

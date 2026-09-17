@@ -4,10 +4,10 @@
 
 namespace HardwareController
 {
-    // Applies initial brightness from the UI snapshot. Call after DisplayApp::setup().
+    // Applies initial external-light state. Call after DisplayApp::setup().
     void configure(const UiControlState& ui);
 
-    // Maps current knob/button state onto PwmDriver and BrightnessDriver.
+    // Maps current knob/button state onto PWM and external-light drivers.
     // Call every loop after DisplayApp::loop(), including untouched frames.
     void apply(const UiControlState& ui);
 

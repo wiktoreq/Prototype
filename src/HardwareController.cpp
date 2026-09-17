@@ -57,21 +57,21 @@ void HardwareController::configure(const UiControlState& ui)
     lastUiDutyA = 0;
     lastUiDutyB = 0;
     BrightnessDriver::configure();
-    BrightnessDriver::update(ui.screenBrightness, ui.lightBrightness);
+    BrightnessDriver::update(ui.lightBrightness);
 }
 
 void HardwareController::apply(const UiControlState& ui)
 {
-    BrightnessDriver::update(ui.screenBrightness, ui.lightBrightness);
+    BrightnessDriver::update(ui.lightBrightness);
 
-    applyActuator(PIN_ACTUATOR_A,
+    applyActuator(ACTUATOR_PWM_24V,
                   ui.heightSpeed,
                   ui.heightContracting,
                   ui.heightRetracting,
                   uiOwnsActuatorA,
                   lastUiDutyA);
 
-    applyActuator(PIN_ACTUATOR_B,
+    applyActuator(ACTUATOR_PWM_12V,
                   ui.positionSpeed,
                   ui.positionContracting,
                   ui.positionRetracting,
@@ -82,8 +82,8 @@ void HardwareController::apply(const UiControlState& ui)
 void HardwareController::setRemoteDuty(uint8_t pin, uint8_t duty)
 {
     const bool uiOwned =
-        (pin == PIN_ACTUATOR_A) ? uiOwnsActuatorA :
-        (pin == PIN_ACTUATOR_B) ? uiOwnsActuatorB :
+        (pin == ACTUATOR_PWM_24V) ? uiOwnsActuatorA :
+        (pin == ACTUATOR_PWM_12V) ? uiOwnsActuatorB :
         false;
 
     if (uiOwned) {

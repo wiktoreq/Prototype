@@ -158,7 +158,6 @@ void DisplayApp::loop() {
 UiControlState DisplayApp::getControlState() {
     UiControlState state;
     state.screen = static_cast<UiControlState::Screen>(currentState);
-    state.screenBrightness = mainMenu.getScreenBrightness();
     state.lightBrightness = mainMenu.getLightBrightness();
     state.heightSpeed = heightMenu.getSpeed();
     state.heightContracting = (currentState == STATE_HEIGHT) && heightMenu.isContractPressed();

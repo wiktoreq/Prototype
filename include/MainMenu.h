@@ -6,40 +6,35 @@
 class MainMenu : public Screen {
 private:
     TFT_eSPI* tft;
-    HorizontalSlider screenSlider;
     HorizontalSlider lightSlider;
 
     enum DragTarget {
         DRAG_NONE = 0,
-        DRAG_SCREEN = 1,
-        DRAG_LIGHT = 2
+        DRAG_LIGHT = 1
     };
     DragTarget dragTarget;
 
-    // Fills slider geometry for the two stacked brightness cards.
-    void layoutSliders();
+    // Fills the external-light slider geometry.
+    void layoutSlider();
 
-    // Paints one brightness card's static chrome (card, icon, title).
-    void drawBrightnessChrome(const HorizontalSlider& slider, bool isScreen);
+    // Paints the external-light card's static chrome.
+    void drawBrightnessChrome();
 
 public:
     // Binds this menu to the shared TFT driver.
     MainMenu(TFT_eSPI* tftInstance);
 
-    // Sets default brightness values and card layout.
+    // Sets the default external-light value and card layout.
     void init() override;
 
-    // Draws both brightness cards into the content area.
+    // Draws the external-light card into the content area.
     void draw() override;
 
-    // Drags the screen or external-light slider from a content-area touch.
+    // Drags the external-light slider from a content-area touch.
     void handleTouch(int16_t touchX, int16_t touchY) override;
 
     // Clears the active slider drag when the finger lifts.
     void handleRelease() override;
-
-    // Returns the current screen-brightness value (0-100).
-    uint8_t getScreenBrightness() const { return screenSlider.value; }
 
     // Returns the current external-light brightness value (0-100).
     uint8_t getLightBrightness() const { return lightSlider.value; }

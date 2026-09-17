@@ -12,8 +12,7 @@ struct UiControlState {
 
     Screen screen;
 
-    // Main-menu brightness knobs, 0-100.
-    uint8_t screenBrightness;
+    // Main-menu external-light knob, 0-100.
     uint8_t lightBrightness;
 
     // Height-tab speed knob (0-100) and CONTRACT/RETRACT hold-buttons.

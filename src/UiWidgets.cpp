@@ -1,6 +1,4 @@
 #include "UiWidgets.h"
-#include "consolab24.h"
-#include <Arduino.h>
 
 TFT_eSPI* UiWidgets::display = nullptr;
 TFT_eSprite* UiWidgets::knobSprite = nullptr;

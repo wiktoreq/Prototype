@@ -2,6 +2,8 @@
 #include <TFT_eSPI.h>
 #include <vector>
 #include <string>
+#include "Config.h"
+#include "consola28.h"
 
 class TopMenu {
 private:

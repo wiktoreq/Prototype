@@ -1,6 +1,8 @@
 #pragma once
+#include <Arduino.h>
 #include <TFT_eSPI.h>
 #include "Config.h"
+#include "consolab24.h"
 
 enum ButtonIcon {
     ICON_NONE = 0,

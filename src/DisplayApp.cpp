@@ -1,17 +1,5 @@
 #include "DisplayApp.h"
 
-#include <Arduino.h>
-#include <TFT_eSPI.h>
-#include <SPI.h>
-#include "FS.h"
-#include "SPIFFS.h"
-
-#include "Config.h"
-#include "UiWidgets.h"
-#include "TopMenu.h"
-#include "MainMenu.h"
-#include "ActuatorMenu.h"
-
 #define CALIBRATION_FILE "/TouchCalData"
 #define REPEAT_CAL true
 

@@ -1,5 +1,4 @@
 #include "MainMenu.h"
-#include <Arduino.h>
 
 // Binds this menu to the shared TFT driver.
 MainMenu::MainMenu(TFT_eSPI* tftInstance)

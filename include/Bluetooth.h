@@ -1,4 +1,9 @@
 #pragma once
+#include <Arduino.h>
+#include <NimBLEDevice.h>
+#include <cstring>
+#include "BluetoothPacket.h"
+#include "HardwareController.h"
 
 namespace Bluetooth
 {

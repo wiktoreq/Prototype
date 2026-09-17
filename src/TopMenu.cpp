@@ -1,6 +1,4 @@
 #include "TopMenu.h"
-#include "Config.h"
-#include "consola28.h"
 
 // Stores the display driver used to paint the tab bar.
 TopMenu::TopMenu(TFT_eSPI* tftInstance) : tft(tftInstance), activeTabIndex(0), tabWidth(0) {}

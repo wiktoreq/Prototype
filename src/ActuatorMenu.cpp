@@ -1,5 +1,4 @@
 #include "ActuatorMenu.h"
-#include <Arduino.h>
 
 // Binds this actuator screen to the shared TFT driver.
 ActuatorMenu::ActuatorMenu(TFT_eSPI* tftInstance)

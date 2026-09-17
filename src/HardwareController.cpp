@@ -1,10 +1,5 @@
 #include "HardwareController.h"
 
-#include <stdint.h>
-#include "BrightnessDriver.h"
-#include "Pins.h"
-#include "PwmDriver.h"
-
 // Local hold-buttons win while pressed. On release the UI writes duty 0 for
 // that actuator. When the UI does not own a pin, the last BLE duty stands.
 

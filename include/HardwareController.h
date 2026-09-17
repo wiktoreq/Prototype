@@ -1,5 +1,8 @@
 #pragma once
 #include <stdint.h>
+#include "BrightnessDriver.h"
+#include "Pins.h"
+#include "PwmDriver.h"
 #include "UiControlState.h"
 
 namespace HardwareController

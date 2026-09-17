@@ -1,5 +1,15 @@
 #pragma once
+#include <Arduino.h>
+#include <TFT_eSPI.h>
+#include <SPI.h>
+#include "FS.h"
+#include "SPIFFS.h"
+#include "ActuatorMenu.h"
+#include "Config.h"
+#include "MainMenu.h"
+#include "TopMenu.h"
 #include "UiControlState.h"
+#include "UiWidgets.h"
 
 namespace DisplayApp
 {

@@ -19,6 +19,10 @@ namespace DisplayApp
     // Polls the touchscreen and routes taps to the tab bar or active screen.
     void loop();
 
+    void sleepOn();
+
+    void sleepOff();
+
     // Returns the current knob values and hold-button flags for hardware.
     UiControlState getControlState();
 }

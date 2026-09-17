@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include "Pins.h"
+#include "DisplayApp.h"
 #include "PwmDriver.h"
 
 namespace GpioInputs

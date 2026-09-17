@@ -10,6 +10,8 @@ unsigned long ledButtonsHeldSince = 0;
 bool ledButtonsHeld = false;
 bool ledToggleHandled = false;
 bool monitoringMuteFlag = false;
+bool monitorSleepFlag = false;
+bool isAsleep = false;
 
 void writeExclusivePair(uint8_t inputA, uint8_t inputB, uint8_t outputA, uint8_t outputB)
 {
@@ -30,8 +32,8 @@ void writeExclusivePair(uint8_t inputA, uint8_t inputB, uint8_t outputA, uint8_t
 
 void updateLedDuty()
 {
-    const bool incrementPressed = digitalRead(POJ_3_A) == HIGH;
-    const bool decrementPressed = digitalRead(POJ_3_B) == HIGH;
+    const bool decrementPressed = digitalRead(POJ_3_A) == HIGH;
+    const bool incrementPressed = digitalRead(POJ_3_B) == HIGH;
 
     if (incrementPressed && decrementPressed) {
         if (!ledButtonsHeld) {
@@ -42,7 +44,7 @@ void updateLedDuty()
 
         if (!ledToggleHandled &&
             millis() - ledButtonsHeldSince >= LED_TOGGLE_HOLD_MS) {
-            if (led12VDuty == 0) {
+            if (led12VDuty < 10) {
                 led12VDuty = rememberedLed12VDuty;
             } else {
                 rememberedLed12VDuty = led12VDuty;
@@ -73,16 +75,39 @@ void updateLedDuty()
 void updateMute()
 {
     if (digitalRead(MUTE_COM) == HIGH) {
+        Serial.println("Mute button pressed");
         monitoringMuteFlag = true;
         return;
     }
 
-    if (monitoringMuteFlag) {
+    if (monitoringMuteFlag && digitalRead(MUTE_COM) == LOW) {
         monitoringMuteFlag = false;
         digitalWrite(MIC_PHANTOM, digitalRead(MIC_PHANTOM) == HIGH ? LOW : HIGH);
         digitalWrite(MUTE_LED, digitalRead(MUTE_LED) == HIGH ? LOW : HIGH);
     }
 }
+
+void updateSleep()
+{
+    if (digitalRead(SLEEP_COM) == HIGH) {
+        Serial.println("Sleep button pressed");
+        monitorSleepFlag = true;
+        return;
+    }
+
+    if (monitorSleepFlag && digitalRead(SLEEP_COM) == LOW) {
+        monitorSleepFlag = false;
+        isAsleep = !isAsleep;
+        if (isAsleep) {
+            DisplayApp::sleepOn();
+            digitalWrite(SLEEP_LED, HIGH);
+        } else {
+            DisplayApp::sleepOff();
+            digitalWrite(SLEEP_LED, LOW);
+        }
+    }
+}
+
 }
 
 void GpioInputs::configure()
@@ -132,4 +157,5 @@ void GpioInputs::loop()
     writeExclusivePair(POJ_2_A, POJ_2_B, ACTUATOR_A_12V, ACTUATOR_B_12V);
     updateLedDuty();
     updateMute();
+    updateSleep();
 }

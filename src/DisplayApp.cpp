@@ -155,3 +155,13 @@ UiControlState DisplayApp::getControlState() {
     state.positionRetracting = (currentState == STATE_POSITION) && positionMenu.isRetractPressed();
     return state;
 }
+
+void DisplayApp::sleepOn() {
+    tft.writecommand(TFT_DISPOFF);
+    tft.writecommand(TFT_SLPIN);
+}
+
+void DisplayApp::sleepOff() {
+    tft.writecommand(TFT_DISPON);
+    tft.writecommand(TFT_SLPOUT);
+}

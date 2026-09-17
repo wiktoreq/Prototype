@@ -50,6 +50,6 @@ constexpr uint16_t COLOR_LIGHT_FILL   = 0xAD76; // #A9ACB6
 
 constexpr uint16_t COLOR_BTN_CONTRACT         = 0x1926; // #1B2431
 constexpr uint16_t COLOR_BTN_CONTRACT_PRESSED = 0xFFDE; // #F8F6F1
-constexpr uint16_t COLOR_BTN_RETRACT          = 0x636F; // #646D7E
+constexpr uint16_t COLOR_BTN_RETRACT          = 0x636F; // #1B2431
 constexpr uint16_t COLOR_BTN_RETRACT_PRESSED  = 0xFFDE; // #F8F6F1
 constexpr uint16_t COLOR_BTN_BORDER           = 0xAD76; // #A9ACB6

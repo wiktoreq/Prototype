@@ -1,6 +1,8 @@
 #pragma once
+#include <Arduino.h>
 #include <TFT_eSPI.h>
 #include "Config.h"
+#include "consolab24.h"
 
 enum ButtonIcon {
     ICON_NONE = 0,
@@ -50,9 +52,6 @@ public:
 
     // Draws a rounded card used as a control group background.
     static void drawCard(TFT_eSPI* tft, int16_t x, int16_t y, int16_t w, int16_t h);
-
-    // Draws a small sun glyph used as the screen-brightness icon.
-    static void drawSunIcon(TFT_eSPI* tft, int16_t cx, int16_t cy, uint16_t color);
 
     // Draws a small lamp glyph used as the external-light icon.
     static void drawLampIcon(TFT_eSPI* tft, int16_t cx, int16_t cy, uint16_t color);

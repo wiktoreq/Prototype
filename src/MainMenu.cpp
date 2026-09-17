@@ -1,31 +1,17 @@
 #include "MainMenu.h"
-#include <Arduino.h>
 
 // Binds this menu to the shared TFT driver.
 MainMenu::MainMenu(TFT_eSPI* tftInstance)
     : tft(tftInstance), dragTarget(DRAG_NONE) {}
 
-// Fills slider geometry for the two stacked brightness cards.
-void MainMenu::layoutSliders() {
+// Fills the external-light slider geometry.
+void MainMenu::layoutSlider() {
     const int16_t cardW = TFT_W - (PAD * 2);
     const int16_t trackW = cardW - 40;
     const int16_t trackH = SLIDER_TRACK_H;
 
-    screenSlider.cardX = PAD;
-    screenSlider.cardY = CONTENT_Y + PAD;
-    screenSlider.cardW = cardW;
-    screenSlider.cardH = MAIN_CARD_H;
-    screenSlider.trackX = PAD + 20;
-    screenSlider.trackY = screenSlider.cardY + 64;
-    screenSlider.trackW = trackW;
-    screenSlider.trackH = trackH;
-    screenSlider.knobRadius = SLIDER_KNOB_R;
-    screenSlider.label = "SCREEN";
-    screenSlider.labelX = PAD + 44;
-    screenSlider.fillColor = COLOR_SCREEN_FILL;
-
     lightSlider.cardX = PAD;
-    lightSlider.cardY = screenSlider.cardY + MAIN_CARD_H + GAP;
+    lightSlider.cardY = CONTENT_Y + PAD;
     lightSlider.cardW = cardW;
     lightSlider.cardH = MAIN_CARD_H;
     lightSlider.trackX = PAD + 20;
@@ -38,61 +24,47 @@ void MainMenu::layoutSliders() {
     lightSlider.fillColor = COLOR_LIGHT_FILL;
 }
 
-// Paints one brightness card's static chrome (card, icon, title).
-void MainMenu::drawBrightnessChrome(const HorizontalSlider& slider, bool isScreen) {
-    UiWidgets::drawCard(tft, slider.cardX, slider.cardY, slider.cardW, slider.cardH);
+// Paints the external-light card's static chrome.
+void MainMenu::drawBrightnessChrome() {
+    UiWidgets::drawCard(tft, lightSlider.cardX, lightSlider.cardY,
+                        lightSlider.cardW, lightSlider.cardH);
+    UiWidgets::drawLampIcon(tft, lightSlider.cardX + 24, lightSlider.cardY + 24,
+                            COLOR_LIGHT_FILL);
 
-    const int16_t iconX = slider.cardX + 24;
-    const int16_t iconY = slider.cardY + 24;
-    if (isScreen) {
-        UiWidgets::drawSunIcon(tft, iconX, iconY, COLOR_SCREEN_FILL);
-    } else {
-        UiWidgets::drawLampIcon(tft, iconX, iconY, COLOR_LIGHT_FILL);
-    }
-
-    UiWidgets::drawSliderLabel(tft, slider);
-    UiWidgets::drawStaticTrack(tft, slider);
+    UiWidgets::drawSliderLabel(tft, lightSlider);
+    UiWidgets::drawStaticTrack(tft, lightSlider);
 }
 
-// Sets default brightness values and card layout.
+// Sets the default external-light value and card layout.
 void MainMenu::init() {
-    layoutSliders();
-    screenSlider.value = 80;
-    screenSlider.oldValue = 80;
+    layoutSlider();
     lightSlider.value = 40;
     lightSlider.oldValue = 40;
     dragTarget = DRAG_NONE;
 }
 
-// Draws both brightness cards into the content area.
+// Draws the external-light card into the content area.
 void MainMenu::draw() {
     UiWidgets::clearContent(tft);
-    drawBrightnessChrome(screenSlider, true);
-    drawBrightnessChrome(lightSlider, false);
-    UiWidgets::pushKnob(screenSlider);
-    UiWidgets::pushValue(screenSlider);
+    drawBrightnessChrome();
     UiWidgets::pushKnob(lightSlider);
     UiWidgets::pushValue(lightSlider);
 }
 
-// Drags the screen or external-light slider from a content-area touch.
+// Drags the external-light slider from a content-area touch.
 void MainMenu::handleTouch(int16_t touchX, int16_t touchY) {
     if (dragTarget == DRAG_NONE) {
-        if (UiWidgets::hitTest(touchX, touchY, screenSlider.cardX, screenSlider.cardY,
-                               screenSlider.cardW, screenSlider.cardH)) {
-            dragTarget = DRAG_SCREEN;
-        } else if (UiWidgets::hitTest(touchX, touchY, lightSlider.cardX, lightSlider.cardY,
-                                      lightSlider.cardW, lightSlider.cardH)) {
+        if (UiWidgets::hitTest(touchX, touchY, lightSlider.cardX, lightSlider.cardY,
+                               lightSlider.cardW, lightSlider.cardH)) {
             dragTarget = DRAG_LIGHT;
         } else {
             return;
         }
     }
 
-    HorizontalSlider* slider = (dragTarget == DRAG_SCREEN) ? &screenSlider : &lightSlider;
-    if (UiWidgets::handleSliderTouch(*slider, touchX)) {
-        UiWidgets::updateSlider(*slider);
-        UiWidgets::pushValue(*slider);
+    if (UiWidgets::handleSliderTouch(lightSlider, touchX)) {
+        UiWidgets::updateSlider(lightSlider);
+        UiWidgets::pushValue(lightSlider);
     }
 }
 

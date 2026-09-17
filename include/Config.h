@@ -19,8 +19,8 @@ constexpr int16_t SLIDER_TRACK_H   = 14;
 constexpr int16_t SLIDER_KNOB_R    = 16;
 constexpr int16_t TOUCH_HYSTERESIS = 3;
 
-// Main menu: two equal brightness cards stacked in the content area
-constexpr int16_t MAIN_CARD_H = (CONTENT_H - PAD * 2 - GAP) / 2;
+// Main menu: one external-light card filling the content area
+constexpr int16_t MAIN_CARD_H = CONTENT_H - PAD * 2;
 
 // Actuator menus: speed card on top, two large hold-buttons below
 constexpr int16_t ACT_SLIDER_CARD_H = 96;
@@ -46,7 +46,6 @@ constexpr uint16_t COLOR_TRACK        = 0x636F; // #646D7E
 constexpr uint16_t COLOR_KNOB         = 0xFFFF; // #FFFFFF
 constexpr uint16_t COLOR_SEPARATOR    = 0x0084; // #041322
 
-constexpr uint16_t COLOR_SCREEN_FILL  = 0xFFDE; // #F8F6F1
 constexpr uint16_t COLOR_LIGHT_FILL   = 0xAD76; // #A9ACB6
 
 constexpr uint16_t COLOR_BTN_CONTRACT         = 0x1926; // #1B2431

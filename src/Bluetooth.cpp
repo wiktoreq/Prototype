@@ -1,9 +1,4 @@
 #include "Bluetooth.h"
-#include "BluetoothPacket.h"
-#include "HardwareController.h"
-#include <Arduino.h>
-#include <NimBLEDevice.h>
-#include <cstring>
 
 #define SERVICE_UUID "249efd7a-56f5-4013-ac77-80f50fa85304" // UART service UUID
 #define CHARACTERISTIC_UUID_RX "1b0484e2-08d1-4376-9173-32af58a86a36" //recieve

@@ -1,60 +1,54 @@
 #include "PwmDriver.h"
-#include "Pins.h"
-#include "driver/ledc.h"
 
-static ledc_channel_config_t ledc_channel_1 = {};
-static ledc_channel_config_t ledc_channel_2 = {};
-static ledc_channel_config_t ledc_channel_3 = {};
-static ledc_timer_config_t ledc_timer = {};
+static ledc_channel_config_t actuator24VChannel = {};
+static ledc_channel_config_t actuator12VChannel = {};
+static ledc_channel_config_t led12VChannel = {};
+static ledc_timer_config_t ledcTimer = {};
 
 void PwmDriver::configure()
 {
-    // 1. Configure the LEDC Timer for Motor Control
-    ledc_timer.speed_mode = LEDC_LOW_SPEED_MODE;
-    ledc_timer.duty_resolution = LEDC_TIMER_8_BIT; // 0 to 255 speed steps
-    ledc_timer.timer_num = LEDC_TIMER_0;
-    ledc_timer.freq_hz = 20000;
-    ledc_timer.clk_cfg = LEDC_AUTO_CLK;
+    ledcTimer.speed_mode = LEDC_LOW_SPEED_MODE;
+    ledcTimer.duty_resolution = LEDC_TIMER_8_BIT;
+    ledcTimer.timer_num = LEDC_TIMER_0;
+    ledcTimer.freq_hz = 20000;
+    ledcTimer.clk_cfg = LEDC_AUTO_CLK;
 
-    ledc_timer_config(&ledc_timer);
+    ledc_timer_config(&ledcTimer);
 
-    // 2. Configure Channel 1 (Actuator 1 / Speed Signal A)
-    ledc_channel_1.speed_mode = LEDC_LOW_SPEED_MODE;
-    ledc_channel_1.channel = LEDC_CHANNEL_0;
-    ledc_channel_1.intr_type = LEDC_INTR_DISABLE;
-    ledc_channel_1.timer_sel = LEDC_TIMER_0;
-    ledc_channel_1.duty = 255;                         // Start at 100% speed
-    ledc_channel_1.hpoint = 0;
-    ledc_channel_1.gpio_num = ACTUATOR_PWM_24V;        // Output to Driver PWM Pin A
+    actuator24VChannel.speed_mode = LEDC_LOW_SPEED_MODE;
+    actuator24VChannel.channel = LEDC_CHANNEL_0;
+    actuator24VChannel.intr_type = LEDC_INTR_DISABLE;
+    actuator24VChannel.timer_sel = LEDC_TIMER_0;
+    actuator24VChannel.duty = 255;
+    actuator24VChannel.hpoint = 0;
+    actuator24VChannel.gpio_num = ACTUATOR_PWM_24V;
 
-    ledc_channel_config(&ledc_channel_1);
+    ledc_channel_config(&actuator24VChannel);
 
-    // 3. Configure Channel 2 (Actuator 2 / Speed Signal B)
-    ledc_channel_2.speed_mode = LEDC_LOW_SPEED_MODE;
-    ledc_channel_2.channel = LEDC_CHANNEL_1;
-    ledc_channel_2.intr_type = LEDC_INTR_DISABLE;
-    ledc_channel_2.timer_sel = LEDC_TIMER_0;
-    ledc_channel_2.duty = 255;                         // Start at 100% speed
-    ledc_channel_2.hpoint = 0;
-    ledc_channel_2.gpio_num = ACTUATOR_PWM_12V;        // Output to Driver PWM Pin B
+    actuator12VChannel.speed_mode = LEDC_LOW_SPEED_MODE;
+    actuator12VChannel.channel = LEDC_CHANNEL_1;
+    actuator12VChannel.intr_type = LEDC_INTR_DISABLE;
+    actuator12VChannel.timer_sel = LEDC_TIMER_0;
+    actuator12VChannel.duty = 255;
+    actuator12VChannel.hpoint = 0;
+    actuator12VChannel.gpio_num = ACTUATOR_PWM_12V;
 
-    ledc_channel_config(&ledc_channel_2);
+    ledc_channel_config(&actuator12VChannel);
 
-    // 4. Configure Channel 3 (Actuator 3 / Speed Signal C)
-    ledc_channel_3.speed_mode = LEDC_LOW_SPEED_MODE;
-    ledc_channel_3.channel = LEDC_CHANNEL_2;
-    ledc_channel_3.intr_type = LEDC_INTR_DISABLE;
-    ledc_channel_3.timer_sel = LEDC_TIMER_0;
-    ledc_channel_3.duty = 255;                         // Start at 100% speed
-    ledc_channel_3.hpoint = 0;
-    ledc_channel_3.gpio_num = LED12V_PWM;        // Output to Driver PWM Pin C
+    led12VChannel.speed_mode = LEDC_LOW_SPEED_MODE;
+    led12VChannel.channel = LEDC_CHANNEL_2;
+    led12VChannel.intr_type = LEDC_INTR_DISABLE;
+    led12VChannel.timer_sel = LEDC_TIMER_0;
+    led12VChannel.duty = 255;
+    led12VChannel.hpoint = 0;
+    led12VChannel.gpio_num = LED12V_PWM;
 
-    ledc_channel_config(&ledc_channel_3);
+    ledc_channel_config(&led12VChannel);
 }
 
-void PwmDriver::updateDuty(uint8_t pin_num, uint8_t duty)
+void PwmDriver::updateDuty(uint8_t pin, uint8_t duty)
 {
-    switch (pin_num)
+    switch (pin)
     {
     case ACTUATOR_PWM_24V:
         ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);

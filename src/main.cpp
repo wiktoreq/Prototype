@@ -1,10 +1,4 @@
-#include <Arduino.h>
-
-#include "GpioInputs.h"
-#include "PwmDriver.h"
-#include "Bluetooth.h"
-#include "DisplayApp.h"
-#include "HardwareController.h"
+#include "main.h"
 
 // Combined firmware entry point. The original front-end and back-end
 // projects each had their own setup()/loop(); those live in DisplayApp
@@ -27,6 +21,7 @@ void setup()
 void loop()
 {
     Bluetooth::loop();
+    GpioInputs::loop();
     DisplayApp::loop();
     HardwareController::apply(DisplayApp::getControlState());
 }

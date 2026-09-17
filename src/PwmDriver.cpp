@@ -24,7 +24,7 @@ void PwmDriver::configure()
     ledc_channel_1.timer_sel = LEDC_TIMER_0;
     ledc_channel_1.duty = 0;                         // Start at 0% speed
     ledc_channel_1.hpoint = 0;
-    ledc_channel_1.gpio_num = PIN_ACTUATOR_A;        // Output to Driver PWM Pin A
+    ledc_channel_1.gpio_num = ACTUATOR_PWM_24V;        // Output to Driver PWM Pin A
 
     ledc_channel_config(&ledc_channel_1);
 
@@ -35,7 +35,7 @@ void PwmDriver::configure()
     ledc_channel_2.timer_sel = LEDC_TIMER_0;
     ledc_channel_2.duty = 0;                         // Start at 0% speed
     ledc_channel_2.hpoint = 0;
-    ledc_channel_2.gpio_num = PIN_ACTUATOR_B;        // Output to Driver PWM Pin B
+    ledc_channel_2.gpio_num = ACTUATOR_PWM_12V;        // Output to Driver PWM Pin B
 
     ledc_channel_config(&ledc_channel_2);
 }
@@ -44,11 +44,11 @@ void PwmDriver::updateDuty(uint8_t pin_num, uint8_t duty)
 {
     switch (pin_num)
     {
-    case PIN_ACTUATOR_A:
+    case ACTUATOR_PWM_24V:
         ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
         break;
-    case PIN_ACTUATOR_B:
+    case ACTUATOR_PWM_12V:
         ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, duty);
         ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
         break;

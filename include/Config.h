@@ -38,21 +38,21 @@ constexpr int16_t VALUE_SPRITE_W  = 56;     // fits "100%" in font 4
 constexpr int16_t VALUE_SPRITE_H  = 26;
 
 // Palette (RGB565) — dark, restrained scheme from the product colors.
-constexpr uint16_t COLOR_BG           = 0x0084; // #041322
-constexpr uint16_t COLOR_SURFACE      = 0x1926; // #1B2431
-constexpr uint16_t COLOR_TAB_IDLE     = 0x0084; // #041322
-constexpr uint16_t COLOR_TAB_ACTIVE   = 0x1926; // #1B2431
-constexpr uint16_t COLOR_ACCENT       = 0xFFDE; // #F8F6F1
-constexpr uint16_t COLOR_TEXT         = 0xFFDE; // #F8F6F1
-constexpr uint16_t COLOR_TEXT_DIM     = 0xAD76; // #A9ACB6
-constexpr uint16_t COLOR_TRACK        = 0x636F; // #646D7E
+constexpr uint16_t COLOR_BG           = 0x0000; // #000000
+constexpr uint16_t COLOR_SURFACE      = 0x0000; // #1B2431
+constexpr uint16_t COLOR_TAB_IDLE     = 0x0000; // #041322
+constexpr uint16_t COLOR_TAB_ACTIVE   = 0x0000; // #1B2431
+constexpr uint16_t COLOR_ACCENT       = 0x0000; // #0f1f64
+constexpr uint16_t COLOR_TEXT         = 0xFFFF; // #ffffff
+constexpr uint16_t COLOR_TEXT_DIM     = 0xFFFF; // #A9ACB6
+constexpr uint16_t COLOR_TRACK        = 0xFFFF; // #646D7E
 constexpr uint16_t COLOR_KNOB         = 0xFFFF; // #FFFFFF
-constexpr uint16_t COLOR_SEPARATOR    = 0x0084; // #041322
+constexpr uint16_t COLOR_SEPARATOR    = 0x0000; // #041322
 
-constexpr uint16_t COLOR_LIGHT_FILL   = 0xAD76; // #A9ACB6
+constexpr uint16_t COLOR_LIGHT_FILL   = 0xFFFF; // #A9ACB6
 
-constexpr uint16_t COLOR_BTN_CONTRACT         = 0x1926; // #1B2431
-constexpr uint16_t COLOR_BTN_CONTRACT_PRESSED = 0xFFDE; // #F8F6F1
-constexpr uint16_t COLOR_BTN_RETRACT          = 0x636F; // #1B2431
-constexpr uint16_t COLOR_BTN_RETRACT_PRESSED  = 0xFFDE; // #F8F6F1
-constexpr uint16_t COLOR_BTN_BORDER           = 0xAD76; // #A9ACB6
+constexpr uint16_t COLOR_BTN_CONTRACT         = 0x0000; // #1B2431
+constexpr uint16_t COLOR_BTN_CONTRACT_PRESSED = 0xFFFF; // #F8F6F1
+constexpr uint16_t COLOR_BTN_RETRACT          = 0x0000; // #1B2431
+constexpr uint16_t COLOR_BTN_RETRACT_PRESSED  = 0xFFFF; // #F8F6F1
+constexpr uint16_t COLOR_BTN_BORDER           = 0xFFFF; // #A9ACB6

@@ -2,7 +2,7 @@
 
 namespace
 {
-constexpr unsigned long LED_TOGGLE_HOLD_MS = 1000;
+constexpr unsigned long LED_TOGGLE_HOLD_MS = 100;
 
 uint8_t led12VDuty = 255;
 uint8_t rememberedLed12VDuty = 255;
@@ -59,7 +59,7 @@ void updateLedDuty()
 
         if (!ledToggleHandled &&
             millis() - ledButtonsHeldSince >= LED_TOGGLE_HOLD_MS) {
-            if (led12VDuty < 10) {
+            if (led12VDuty < 20) {
                 led12VDuty = rememberedLed12VDuty;
             } else {
                 rememberedLed12VDuty = led12VDuty;
@@ -122,7 +122,7 @@ void GpioInputs::setDisplaySleepHandlers(DisplayAction sleepOn, DisplayAction sl
 
 void GpioInputs::toggleMute()
 {
-    digitalWrite(MIC_PHANTOM, digitalRead(MIC_PHANTOM) == HIGH ? LOW : HIGH);
+    digitalWrite(MIC_PHANTOM, digitalRead(MIC_PHANTOM) == HIGH ? LOW : HIGH );
     digitalWrite(MUTE_LED, digitalRead(MUTE_LED) == HIGH ? LOW : HIGH);
 }
 
@@ -133,12 +133,16 @@ void GpioInputs::toggleSleep()
         if (displaySleepOn != nullptr) {
             displaySleepOn();
         }
+        digitalWrite(MIC_PHANTOM, LOW);
+        digitalWrite(MUTE_LED, LOW);
         digitalWrite(SLEEP_LED, HIGH);
+        digitalWrite(SCREEN_LED, HIGH);
     } else {
         if (displaySleepOff != nullptr) {
             displaySleepOff();
         }
         digitalWrite(SLEEP_LED, LOW);
+        digitalWrite(SCREEN_LED, LOW);
     }
 }
 
@@ -191,6 +195,9 @@ void GpioInputs::configure()
 
     pinMode(MIC_PHANTOM, OUTPUT);
 
+    pinMode(SCREEN_LED, OUTPUT);
+
+    digitalWrite(SCREEN_LED, LOW);
     digitalWrite(ACTUATOR_A_24V, LOW);
     digitalWrite(ACTUATOR_B_24V, LOW);
     digitalWrite(ACTUATOR_A_12V, LOW);

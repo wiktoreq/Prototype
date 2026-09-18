@@ -97,6 +97,7 @@ static void touch_calibrate() {
 }
 
 void DisplayApp::setup() {
+    
     tft.init();
     tft.setRotation(3);
     tft.fillScreen(COLOR_BG);
@@ -166,6 +167,7 @@ UiControlState DisplayApp::getControlState() {
 }
 
 void DisplayApp::sleepOn() {
+    
     tft.writecommand(TFT_DISPOFF);
     tft.writecommand(TFT_SLPIN);
 }

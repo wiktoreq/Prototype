@@ -18,6 +18,7 @@ constexpr uint8_t MUTE_COM = 47;
 //SLEEP
 constexpr uint8_t SLEEP_LED = 9;
 constexpr uint8_t SLEEP_COM = 10;
+constexpr uint8_t SCREEN_LED = 8;
 
 //ACTUATORS
 //24V

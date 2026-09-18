@@ -1,4 +1,12 @@
-#include "main.h"
+#include <Arduino.h>
+
+#include "ActuatorController.h"
+#include "Bluetooth.h"
+#include "DisplayApp.h"
+#include "GpioInputs.h"
+#include "HardwareController.h"
+#include "PwmDriver.h"
+#include "SystemPower.h"
 
 // Combined firmware entry point. The original front-end and back-end
 // projects each had their own setup()/loop(); those live in DisplayApp
@@ -8,6 +16,8 @@
 void setup()
 {
     GpioInputs::configure();
+    ActuatorController::configure();
+    SystemPower::configure();
     PwmDriver::configure();
 
     Serial.begin(115200);
@@ -20,7 +30,16 @@ void setup()
 
 void loop()
 {
+    if (SystemPower::isSleeping()) {
+        GpioInputs::checkSleepButton();
+        return;
+    }
+
+    GpioInputs::update();
+    if (SystemPower::isSleeping()) {
+        return;
+    }
+
     Bluetooth::loop();
-    GpioInputs::loop();
     DisplayApp::loop();
 }

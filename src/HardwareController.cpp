@@ -1,15 +1,8 @@
 #include "HardwareController.h"
 
-namespace
-{
-uint8_t percentToDuty(uint8_t percent)
-{
-    if (percent >= 100) {
-        return 255;
-    }
-    return static_cast<uint8_t>((percent * 255UL) / 100UL);
-}
-}
+#include "ActuatorController.h"
+#include "PwmDriver.h"
+#include "SystemPower.h"
 
 void HardwareController::configure(const UiControlState& ui)
 {
@@ -22,37 +15,37 @@ void HardwareController::configure(const UiControlState& ui)
 
 void HardwareController::setLightBrightness(uint8_t brightness)
 {
-    GpioInputs::setLedDuty(percentToDuty(brightness));
+    SystemPower::setLedBrightness(brightness);
 }
 
 void HardwareController::toggleMute()
 {
-    GpioInputs::toggleMute();
+    SystemPower::toggleMute();
 }
 
-void HardwareController::toggleSleep()
+void HardwareController::toggleLed()
 {
-    GpioInputs::toggleSleep();
+    SystemPower::toggleLed();
 }
 
 void HardwareController::setHeightSpeed(uint8_t speed)
 {
-    PwmDriver::updateDuty(ACTUATOR_PWM_24V, percentToDuty(speed));
+    ActuatorController::set24VSpeed(speed);
 }
 
 void HardwareController::setHeightDirection(bool contracting, bool retracting)
 {
-    GpioInputs::setActuator24VDirection(contracting, retracting);
+    ActuatorController::set24VDirection(contracting, retracting);
 }
 
 void HardwareController::setPositionSpeed(uint8_t speed)
 {
-    PwmDriver::updateDuty(ACTUATOR_PWM_12V, percentToDuty(speed));
+    ActuatorController::set12VSpeed(speed);
 }
 
 void HardwareController::setPositionDirection(bool contracting, bool retracting)
 {
-    GpioInputs::setActuator12VDirection(contracting, retracting);
+    ActuatorController::set12VDirection(contracting, retracting);
 }
 
 void HardwareController::setRemoteDuty(uint8_t pin, uint8_t duty)

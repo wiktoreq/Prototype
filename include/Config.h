@@ -19,7 +19,7 @@ constexpr int16_t SLIDER_TRACK_H   = 14;
 constexpr int16_t SLIDER_KNOB_R    = 16;
 constexpr int16_t TOUCH_HYSTERESIS = 3;
 
-// Main menu: external-light slider above Sleep and Mute buttons
+// Main menu: external-light slider above LED power and mute buttons
 constexpr int16_t MAIN_CARD_H = 96;
 constexpr int16_t MAIN_BTN_Y  = CONTENT_Y + PAD + MAIN_CARD_H + GAP;
 constexpr int16_t MAIN_BTN_H  = (CONTENT_Y + CONTENT_H) - PAD - MAIN_BTN_Y;
@@ -37,22 +37,21 @@ constexpr uint16_t KNOB_CHROMA    = 0xF81F; // magenta key, unused in the UI
 constexpr int16_t VALUE_SPRITE_W  = 56;     // fits "100%" in font 4
 constexpr int16_t VALUE_SPRITE_H  = 26;
 
-// Palette (RGB565) — dark, restrained scheme from the product colors.
-constexpr uint16_t COLOR_BG           = 0x0000; // #000000
-constexpr uint16_t COLOR_SURFACE      = 0x0000; // #1B2431
-constexpr uint16_t COLOR_TAB_IDLE     = 0x0000; // #041322
-constexpr uint16_t COLOR_TAB_ACTIVE   = 0x0000; // #1B2431
-constexpr uint16_t COLOR_ACCENT       = 0x0000; // #0f1f64
-constexpr uint16_t COLOR_TEXT         = 0xFFFF; // #ffffff
-constexpr uint16_t COLOR_TEXT_DIM     = 0xFFFF; // #A9ACB6
-constexpr uint16_t COLOR_TRACK        = 0xFFFF; // #646D7E
-constexpr uint16_t COLOR_KNOB         = 0xFFFF; // #FFFFFF
-constexpr uint16_t COLOR_SEPARATOR    = 0x0000; // #041322
+// Monochrome RGB565 palette
+constexpr uint16_t COLOR_BG = 0x0000;
+constexpr uint16_t COLOR_SURFACE = 0x0000;
+constexpr uint16_t COLOR_TAB_IDLE = 0x0000;
+constexpr uint16_t COLOR_TAB_ACTIVE = 0x0000;
+constexpr uint16_t COLOR_ACCENT = 0x0000;
+constexpr uint16_t COLOR_TEXT = 0xFFFF;
+constexpr uint16_t COLOR_TEXT_DIM = 0xFFFF;
+constexpr uint16_t COLOR_TRACK = 0xFFFF;
+constexpr uint16_t COLOR_KNOB = 0xFFFF;
+constexpr uint16_t COLOR_SEPARATOR = 0x0000;
+constexpr uint16_t COLOR_LIGHT_FILL = 0xFFFF;
 
-constexpr uint16_t COLOR_LIGHT_FILL   = 0xFFFF; // #A9ACB6
-
-constexpr uint16_t COLOR_BTN_CONTRACT         = 0x0000; // #1B2431
-constexpr uint16_t COLOR_BTN_CONTRACT_PRESSED = 0xFFFF; // #F8F6F1
-constexpr uint16_t COLOR_BTN_RETRACT          = 0x0000; // #1B2431
-constexpr uint16_t COLOR_BTN_RETRACT_PRESSED  = 0xFFFF; // #F8F6F1
-constexpr uint16_t COLOR_BTN_BORDER           = 0xFFFF; // #A9ACB6
+constexpr uint16_t COLOR_BTN_CONTRACT = 0x0000;
+constexpr uint16_t COLOR_BTN_CONTRACT_PRESSED = 0xFFFF;
+constexpr uint16_t COLOR_BTN_RETRACT = 0x0000;
+constexpr uint16_t COLOR_BTN_RETRACT_PRESSED = 0xFFFF;
+constexpr uint16_t COLOR_BTN_BORDER = 0xFFFF;

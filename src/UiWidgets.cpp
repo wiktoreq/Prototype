@@ -1,5 +1,10 @@
 #include "UiWidgets.h"
 
+#include <Arduino.h>
+
+#include "Config.h"
+#include "consolab24.h"
+
 TFT_eSPI* UiWidgets::display = nullptr;
 TFT_eSprite* UiWidgets::knobSprite = nullptr;
 TFT_eSprite* UiWidgets::valueSprite = nullptr;
@@ -78,7 +83,11 @@ void UiWidgets::drawStaticTrack(TFT_eSPI* tft, const HorizontalSlider& slider) {
 
     int16_t fillW = map(slider.value, 0, 100, 0, slider.trackW);
     if (fillW < slider.trackH) {
-        fillW = (slider.value == 0) ? 0 : slider.trackH;
+        if (slider.value == 0) {
+            fillW = 0;
+        } else {
+            fillW = slider.trackH;
+        }
     }
     if (fillW > 0) {
         tft->fillRoundRect(slider.trackX, slider.trackY, fillW, slider.trackH,
@@ -115,7 +124,11 @@ void UiWidgets::restoreOldKnob(const HorizontalSlider& slider) {
 
     int16_t fillW = map(slider.value, 0, 100, 0, slider.trackW);
     if (fillW < slider.trackH) {
-        fillW = (slider.value == 0) ? 0 : slider.trackH;
+        if (slider.value == 0) {
+            fillW = 0;
+        } else {
+            fillW = slider.trackH;
+        }
     }
     if (fillW > 0) {
         knobSprite->fillRect(trackInSpriteX, trackY, fillW, slider.trackH, slider.fillColor);
@@ -179,29 +192,55 @@ bool UiWidgets::handleSliderTouch(HorizontalSlider& slider, int16_t touchX) {
 
 // Blits one hold-button from a sprite sized to the button.
 void UiWidgets::pushButton(const TouchButton& btn) {
-    const uint16_t bg = btn.pressed ? btn.pressedColor : btn.color;
-    const uint16_t fg = btn.pressed ? COLOR_BG : COLOR_TEXT;
+    uint16_t backgroundColor = btn.color;
+    uint16_t foregroundColor = COLOR_TEXT;
+    if (btn.pressed) {
+        backgroundColor = btn.pressedColor;
+        foregroundColor = COLOR_BG;
+    }
+
     const int16_t cx = btn.w / 2;
     const int16_t cy = (btn.h / 2) - 16;
 
     buttonSprite->fillSprite(COLOR_BG);
-    buttonSprite->fillRoundRect(0, 0, btn.w, btn.h, BTN_RADIUS, bg);
+    buttonSprite->fillRoundRect(0, 0, btn.w, btn.h, BTN_RADIUS, backgroundColor);
     buttonSprite->drawRoundRect(0, 0, btn.w, btn.h, BTN_RADIUS, COLOR_BTN_BORDER);
 
     if (btn.pressed) {
-        buttonSprite->drawRoundRect(3, 3, btn.w - 6, btn.h - 6, BTN_RADIUS - 2, fg);
+        buttonSprite->drawRoundRect(3,
+                                    3,
+                                    btn.w - 6,
+                                    btn.h - 6,
+                                    BTN_RADIUS - 2,
+                                    foregroundColor);
     }
 
     if (btn.icon == ICON_DOWN) {
-        buttonSprite->fillTriangle(cx - 24, cy - 16, cx + 24, cy - 16, cx, cy + 12, fg);
+        buttonSprite->fillTriangle(cx - 24,
+                                   cy - 16,
+                                   cx + 24,
+                                   cy - 16,
+                                   cx,
+                                   cy + 12,
+                                   foregroundColor);
     } else if (btn.icon == ICON_UP) {
-        buttonSprite->fillTriangle(cx - 24, cy + 12, cx + 24, cy + 12, cx, cy - 16, fg);
+        buttonSprite->fillTriangle(cx - 24,
+                                   cy + 12,
+                                   cx + 24,
+                                   cy + 12,
+                                   cx,
+                                   cy - 16,
+                                   foregroundColor);
     }
 
     buttonSprite->loadFont(consolab24);
     buttonSprite->setTextDatum(MC_DATUM);
-    buttonSprite->setTextColor(fg, bg);
-    const int16_t labelY = btn.icon == ICON_NONE ? btn.h / 2 : btn.h - 32;
+    buttonSprite->setTextColor(foregroundColor, backgroundColor);
+
+    int16_t labelY = btn.h - 32;
+    if (btn.icon == ICON_NONE) {
+        labelY = btn.h / 2;
+    }
     buttonSprite->drawString(btn.label, cx, labelY);
     buttonSprite->unloadFont();
 

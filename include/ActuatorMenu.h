@@ -1,62 +1,54 @@
 #pragma once
+
 #include <Arduino.h>
 #include <TFT_eSPI.h>
+
 #include "Screen.h"
 #include "UiWidgets.h"
 
-class ActuatorMenu : public Screen {
+class ActuatorMenu : public Screen
+{
 public:
-    using SliderEventHandler = void (*)(uint8_t value);
+    using SpeedEventHandler = void (*)(uint8_t value);
     using DirectionEventHandler = void (*)(bool contracting, bool retracting);
 
-private:
-    TFT_eSPI* tft;
-    HorizontalSlider speedSlider;
-    TouchButton contractBtn;
-    TouchButton retractBtn;
-    SliderEventHandler speedChangedHandler;
-    DirectionEventHandler directionChangedHandler;
+    explicit ActuatorMenu(TFT_eSPI* display);
 
-    enum DragTarget {
-        DRAG_NONE = 0,
-        DRAG_SPEED = 1,
-        DRAG_CONTRACT = 2,
-        DRAG_RETRACT = 3
-    };
-    DragTarget dragTarget;
+    void setEventHandlers(SpeedEventHandler speedChanged,
+                          DirectionEventHandler directionChanged);
 
-    // Places the speed card and the two actuator buttons in the content area.
-    void layoutControls();
-
-    // Redraws a button only when its pressed state changes.
-    void setButtonPressed(TouchButton& btn, bool pressed);
-
-public:
-    // Binds this actuator screen to the shared TFT driver.
-    ActuatorMenu(TFT_eSPI* tftInstance);
-
-    // Registers speed and direction hardware event handlers.
-    void setEventHandlers(SliderEventHandler onSpeedChanged,
-                          DirectionEventHandler onDirectionChanged);
-
-    // Sets default speed and lays out the speed slider plus action buttons.
     void init() override;
-
-    // Draws the speed card and the contract/retract hold-buttons.
     void draw() override;
-
-    // Routes a touch to the speed slider or to one of the two hold-buttons.
     void handleTouch(int16_t touchX, int16_t touchY) override;
-
-    // Releases any held button and ends an in-progress slider drag.
     void handleRelease() override;
 
-    // Returns the actuator movement speed (0-100).
-    uint8_t getSpeed() const { return speedSlider.value; }
+    uint8_t getSpeed() const;
+    bool isContractPressed() const;
+    bool isRetractPressed() const;
 
-    // Returns true while the contract button is held.
-    bool isContractPressed() const { return contractBtn.pressed; }
+private:
+    enum class TouchTarget : uint8_t
+    {
+        None,
+        SpeedSlider,
+        ContractButton,
+        RetractButton
+    };
 
-    // Returns true while the retract button is held.
-    bool isRetractPressed() const { return retractBtn.pressed; }
+    TFT_eSPI* display;
+    HorizontalSlider speedSlider;
+    TouchButton contractButton;
+    TouchButton retractButton;
+    SpeedEventHandler speedChangedHandler;
+    DirectionEventHandler directionChangedHandler;
+    TouchTarget activeTouchTarget;
+
+    void configureSpeedSlider();
+    void configureButtons();
+    void drawSpeedControl();
+    void drawButtons();
+    void selectTouchTarget(int16_t touchX, int16_t touchY);
+    void handleSpeedSliderTouch(int16_t touchX);
+    void updateButtonPressedState(TouchButton& button, bool pressed);
+    void notifyDirectionChanged();
 };

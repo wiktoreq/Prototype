@@ -1,231 +1,162 @@
 #include "GpioInputs.h"
 
+#include <Arduino.h>
+
+#include "ActuatorController.h"
+#include "Pins.h"
+#include "SystemPower.h"
+
 namespace
 {
-constexpr unsigned long LED_TOGGLE_HOLD_MS = 100;
+constexpr unsigned long LED_TOGGLE_HOLD_MILLISECONDS = 100;
 
-uint8_t led12VDuty = 255;
-uint8_t rememberedLed12VDuty = 255;
-unsigned long ledButtonsHeldSince = 0;
-bool ledButtonsHeld = false;
-bool ledToggleHandled = false;
-bool monitoringMuteFlag = false;
-bool monitorSleepFlag = false;
-bool isAsleep = false;
-bool uiActuator24VA = false;
-bool uiActuator24VB = false;
-bool uiActuator12VA = false;
-bool uiActuator12VB = false;
-GpioInputs::DisplayAction displaySleepOn = nullptr;
-GpioInputs::DisplayAction displaySleepOff = nullptr;
+bool muteButtonWasPressed = false;
+bool sleepButtonWasPressed = false;
+bool bothLedButtonsAreHeld = false;
+bool ledToggleWasHandled = false;
+unsigned long ledButtonsPressedAt = 0;
 
-void applyExclusivePair(bool requestA, bool requestB, uint8_t outputA, uint8_t outputB)
+bool pinIsHigh(uint8_t pin)
 {
-    if (requestA == requestB) {
-        digitalWrite(outputA, LOW);
-        digitalWrite(outputB, LOW);
-    } else if (requestA) {
-        digitalWrite(outputB, LOW);
-        digitalWrite(outputA, HIGH);
-    } else {
-        digitalWrite(outputA, LOW);
-        digitalWrite(outputB, HIGH);
-    }
+    return digitalRead(pin) == HIGH;
 }
 
-void writeExclusivePair(uint8_t inputA,
-                        uint8_t inputB,
-                        uint8_t outputA,
-                        uint8_t outputB,
-                        bool uiRequestA,
-                        bool uiRequestB)
+void resetButtonTracking()
 {
-    const bool requestA = digitalRead(inputA) == HIGH || uiRequestA;
-    const bool requestB = digitalRead(inputB) == HIGH || uiRequestB;
-    applyExclusivePair(requestA, requestB, outputA, outputB);
+    muteButtonWasPressed = false;
+    sleepButtonWasPressed = false;
+    bothLedButtonsAreHeld = false;
+    ledToggleWasHandled = false;
+    ledButtonsPressedAt = 0;
 }
 
-void updateLedDuty()
+void updateMuteButton()
 {
-    const bool decrementPressed = digitalRead(POJ_3_A) == HIGH;
-    const bool incrementPressed = digitalRead(POJ_3_B) == HIGH;
-
-    if (incrementPressed && decrementPressed) {
-        if (!ledButtonsHeld) {
-            ledButtonsHeld = true;
-            ledButtonsHeldSince = millis();
-            ledToggleHandled = false;
-        }
-
-        if (!ledToggleHandled &&
-            millis() - ledButtonsHeldSince >= LED_TOGGLE_HOLD_MS) {
-            if (led12VDuty < 20) {
-                led12VDuty = rememberedLed12VDuty;
-            } else {
-                rememberedLed12VDuty = led12VDuty;
-                led12VDuty = 0;
-            }
-            GpioInputs::setLedDuty(led12VDuty);
-            ledToggleHandled = true;
-        }
+    if (pinIsHigh(MUTE_COM)) {
+        muteButtonWasPressed = true;
         return;
     }
 
-    ledButtonsHeld = false;
-    ledToggleHandled = false;
-
-    uint8_t newDuty = led12VDuty;
-    if (incrementPressed && led12VDuty < 255) {
-        newDuty++;
-    } else if (decrementPressed && led12VDuty > 0) {
-        newDuty--;
-    }
-
-    if (newDuty != led12VDuty) {
-        GpioInputs::setLedDuty(newDuty);
+    if (muteButtonWasPressed) {
+        muteButtonWasPressed = false;
+        SystemPower::toggleMute();
     }
 }
 
-void updateMute()
+void updateSleepButton()
 {
-    if (digitalRead(MUTE_COM) == HIGH) {
-        monitoringMuteFlag = true;
+    if (pinIsHigh(SLEEP_COM)) {
+        sleepButtonWasPressed = true;
         return;
     }
 
-    if (monitoringMuteFlag && digitalRead(MUTE_COM) == LOW) {
-        monitoringMuteFlag = false;
-        GpioInputs::toggleMute();
+    if (sleepButtonWasPressed) {
+        sleepButtonWasPressed = false;
+        SystemPower::toggleSleep();
     }
 }
 
-void updateSleep()
+void beginLedButtonHold()
 {
-    if (digitalRead(SLEEP_COM) == HIGH) {
-        monitorSleepFlag = true;
+    bothLedButtonsAreHeld = true;
+    ledToggleWasHandled = false;
+    ledButtonsPressedAt = millis();
+}
+
+bool ledButtonHoldReachedToggleTime()
+{
+    unsigned long heldFor = millis() - ledButtonsPressedAt;
+    return heldFor >= LED_TOGGLE_HOLD_MILLISECONDS;
+}
+
+void updateLedButtonHold()
+{
+    if (!bothLedButtonsAreHeld) {
+        beginLedButtonHold();
+    }
+
+    if (ledToggleWasHandled) {
         return;
     }
 
-    if (monitorSleepFlag && digitalRead(SLEEP_COM) == LOW) {
-        monitorSleepFlag = false;
-        GpioInputs::toggleSleep();
+    if (ledButtonHoldReachedToggleTime()) {
+        SystemPower::toggleLed();
+        ledToggleWasHandled = true;
     }
 }
 
+void resetLedButtonHold()
+{
+    bothLedButtonsAreHeld = false;
+    ledToggleWasHandled = false;
 }
 
-void GpioInputs::setDisplaySleepHandlers(DisplayAction sleepOn, DisplayAction sleepOff)
+void incrementLedDuty()
 {
-    displaySleepOn = sleepOn;
-    displaySleepOff = sleepOff;
-}
-
-void GpioInputs::toggleMute()
-{
-    digitalWrite(MIC_PHANTOM, digitalRead(MIC_PHANTOM) == HIGH ? LOW : HIGH );
-    digitalWrite(MUTE_LED, digitalRead(MUTE_LED) == HIGH ? LOW : HIGH);
-}
-
-void GpioInputs::toggleSleep()
-{
-    isAsleep = !isAsleep;
-    if (isAsleep) {
-        if (displaySleepOn != nullptr) {
-            displaySleepOn();
-        }
-        digitalWrite(MIC_PHANTOM, LOW);
-        digitalWrite(MUTE_LED, LOW);
-        digitalWrite(SLEEP_LED, HIGH);
-        digitalWrite(SCREEN_LED, HIGH);
-    } else {
-        if (displaySleepOff != nullptr) {
-            displaySleepOff();
-        }
-        digitalWrite(SLEEP_LED, LOW);
-        digitalWrite(SCREEN_LED, LOW);
+    uint8_t duty = SystemPower::getLedDuty();
+    if (duty < 255) {
+        SystemPower::setLedDuty(duty + 1);
     }
 }
 
-void GpioInputs::setLedDuty(uint8_t duty)
+void decrementLedDuty()
 {
-    led12VDuty = duty;
-    PwmDriver::updateDuty(LED12V_PWM, led12VDuty);
+    uint8_t duty = SystemPower::getLedDuty();
+    if (duty > 0) {
+        SystemPower::setLedDuty(duty - 1);
+    }
 }
 
-void GpioInputs::setActuator24VDirection(bool requestA, bool requestB)
+void updateLedButtons()
 {
-    uiActuator24VA = requestA;
-    uiActuator24VB = requestB;
-    writeExclusivePair(POJ_1_A, POJ_1_B, ACTUATOR_A_24V, ACTUATOR_B_24V,
-                       uiActuator24VA, uiActuator24VB);
-}
+    bool decrementIsPressed = pinIsHigh(POJ_3_A);
+    bool incrementIsPressed = pinIsHigh(POJ_3_B);
 
-void GpioInputs::setActuator12VDirection(bool requestA, bool requestB)
-{
-    uiActuator12VA = requestA;
-    uiActuator12VB = requestB;
-    writeExclusivePair(POJ_2_A, POJ_2_B, ACTUATOR_A_12V, ACTUATOR_B_12V,
-                       uiActuator12VA, uiActuator12VB);
+    if (decrementIsPressed && incrementIsPressed) {
+        updateLedButtonHold();
+        return;
+    }
+
+    resetLedButtonHold();
+
+    if (incrementIsPressed) {
+        incrementLedDuty();
+        return;
+    }
+
+    if (decrementIsPressed) {
+        decrementLedDuty();
+    }
+}
 }
 
 void GpioInputs::configure()
 {
     pinMode(POJ_1_A, INPUT);
     pinMode(POJ_1_B, INPUT);
-
     pinMode(POJ_2_A, INPUT);
     pinMode(POJ_2_B, INPUT);
-
     pinMode(POJ_3_A, INPUT);
     pinMode(POJ_3_B, INPUT);
-
     pinMode(MUTE_COM, INPUT_PULLUP);
-    pinMode(MUTE_LED, OUTPUT);
-
     pinMode(SLEEP_COM, INPUT_PULLUP);
-    pinMode(SLEEP_LED, OUTPUT);
 
-    pinMode(ACTUATOR_A_24V, OUTPUT);
-    pinMode(ACTUATOR_B_24V, OUTPUT);
-
-    pinMode(ACTUATOR_A_12V, OUTPUT);
-    pinMode(ACTUATOR_B_12V, OUTPUT);
-
-    pinMode(LED12V_PWM, OUTPUT);
-
-    pinMode(MIC_PHANTOM, OUTPUT);
-
-    pinMode(SCREEN_LED, OUTPUT);
-
-    digitalWrite(SCREEN_LED, LOW);
-    digitalWrite(ACTUATOR_A_24V, LOW);
-    digitalWrite(ACTUATOR_B_24V, LOW);
-    digitalWrite(ACTUATOR_A_12V, LOW);
-    digitalWrite(ACTUATOR_B_12V, LOW);
-    digitalWrite(MUTE_LED, LOW);
-    digitalWrite(MIC_PHANTOM, LOW);
-    digitalWrite(SLEEP_LED, LOW);
-
-    led12VDuty = 255;
-    rememberedLed12VDuty = 255;
-    ledButtonsHeld = false;
-    ledToggleHandled = false;
-    monitoringMuteFlag = false;
-    monitorSleepFlag = false;
-    isAsleep = false;
-    uiActuator24VA = false;
-    uiActuator24VB = false;
-    uiActuator12VA = false;
-    uiActuator12VB = false;
+    resetButtonTracking();
 }
 
-void GpioInputs::loop()
+void GpioInputs::update()
 {
-    writeExclusivePair(POJ_1_A, POJ_1_B, ACTUATOR_A_24V, ACTUATOR_B_24V,
-                       uiActuator24VA, uiActuator24VB);
-    writeExclusivePair(POJ_2_A, POJ_2_B, ACTUATOR_A_12V, ACTUATOR_B_12V,
-                       uiActuator12VA, uiActuator12VB);
-    updateLedDuty();
-    updateMute();
-    updateSleep();
+    updateSleepButton();
+    if (SystemPower::isSleeping()) {
+        return;
+    }
+
+    ActuatorController::updatePhysicalInputs();
+    updateLedButtons();
+    updateMuteButton();
+}
+
+void GpioInputs::checkSleepButton()
+{
+    updateSleepButton();
 }

@@ -1,99 +1,127 @@
 #include "Bluetooth.h"
 
-#define SERVICE_UUID "249efd7a-56f5-4013-ac77-80f50fa85304" // UART service UUID
-#define CHARACTERISTIC_UUID_RX "1b0484e2-08d1-4376-9173-32af58a86a36" //recieve
-#define CHARACTERISTIC_UUID_TX "badc375a-b3ef-4c63-ae97-bb73da0d7d34" //transmit
+#include <Arduino.h>
+#include <NimBLEDevice.h>
+#include <cstring>
 
-static BuetoothPacket rxData;
-static volatile bool newDataAvailable = false;
+#include "BluetoothPacket.h"
+#include "HardwareController.h"
 
-static NimBLEServer *pServer = NULL;
-static NimBLECharacteristic *pTxCharacteristic;
-static bool deviceConnected = false;
-static bool oldDeviceConnected = false;
-
-class MyServerCallbacks : public NimBLEServerCallbacks
+namespace
 {
-    void onConnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo) { deviceConnected = true; };
-    void onDisconnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo, int reason) { deviceConnected = false; }
-};
+constexpr char DEVICE_NAME[] = "ESP32-S3";
+constexpr char SERVICE_UUID[] = "249efd7a-56f5-4013-ac77-80f50fa85304";
+constexpr char RECEIVE_CHARACTERISTIC_UUID[] = "1b0484e2-08d1-4376-9173-32af58a86a36";
+constexpr char TRANSMIT_CHARACTERISTIC_UUID[] = "badc375a-b3ef-4c63-ae97-bb73da0d7d34";
 
-class MyCallbacks : public NimBLECharacteristicCallbacks
+BluetoothPacket receivedPacket = {};
+volatile bool packetIsReady = false;
+NimBLEServer* server = nullptr;
+NimBLECharacteristic* transmitCharacteristic = nullptr;
+bool deviceIsConnected = false;
+bool deviceWasConnected = false;
+
+class ServerConnectionCallbacks : public NimBLEServerCallbacks
 {
-    void onWrite(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo &connInfo)
+    void onConnect(NimBLEServer*, NimBLEConnInfo&) override
     {
-        std::string value = pCharacteristic->getValue();
-        size_t length = value.length();
+        deviceIsConnected = true;
+    }
 
-        if (length == sizeof(BuetoothPacket))
-        {
-            memcpy(&rxData, value.data(), sizeof(BuetoothPacket));
-            newDataAvailable = true;
-        }
-        else
-        {
-            Serial.printf("Warning: Expected %d bytes, but recieved %d\n", sizeof(BuetoothPacket), length);
-        }
+    void onDisconnect(NimBLEServer*, NimBLEConnInfo&, int) override
+    {
+        deviceIsConnected = false;
     }
 };
 
+class ReceiveCallbacks : public NimBLECharacteristicCallbacks
+{
+    void onWrite(NimBLECharacteristic* characteristic, NimBLEConnInfo&) override
+    {
+        std::string value = characteristic->getValue();
+        size_t receivedLength = value.length();
+        size_t expectedLength = sizeof(BluetoothPacket);
+
+        if (receivedLength != expectedLength) {
+            Serial.printf("Warning: expected %u bytes but received %u bytes\n",
+                          static_cast<unsigned int>(expectedLength),
+                          static_cast<unsigned int>(receivedLength));
+            return;
+        }
+
+        std::memcpy(&receivedPacket, value.data(), expectedLength);
+        packetIsReady = true;
+    }
+};
+
+void processReceivedPacket()
+{
+    if (!packetIsReady) {
+        return;
+    }
+
+    packetIsReady = false;
+    Serial.println("--- New Data Packet Received ---");
+    Serial.printf("Target Pin: %u\n",
+                  static_cast<unsigned int>(receivedPacket.targetPin));
+    Serial.printf("Duty: %u\n",
+                  static_cast<unsigned int>(receivedPacket.duty));
+    Serial.println("--------------------------------");
+
+    HardwareController::setRemoteDuty(receivedPacket.targetPin, receivedPacket.duty);
+}
+
+void transmitSerialInput()
+{
+    if (!deviceIsConnected || Serial.available() <= 0) {
+        return;
+    }
+
+    String serialMessage = Serial.readString();
+    transmitCharacteristic->setValue(serialMessage.c_str());
+    transmitCharacteristic->notify();
+
+    // Give the Bluetooth stack time to send before another notification.
+    delay(10);
+}
+
+void updateAdvertisingState()
+{
+    if (!deviceIsConnected && deviceWasConnected) {
+        delay(500);
+        server->startAdvertising();
+        Serial.println("Bluetooth advertising restarted");
+    }
+
+    deviceWasConnected = deviceIsConnected;
+}
+}
+
 void Bluetooth::configure()
 {
-    // Create the BLE Device
-    NimBLEDevice::init("ESP32-S3");
-    // Create the BLE Server
-    pServer = NimBLEDevice::createServer();
-    pServer->setCallbacks(new MyServerCallbacks());
-    // Create the BLE Service
-    NimBLEService *pService = pServer->createService(SERVICE_UUID);
-    // Create a BLE Characteristic
-    // NimBLE auto-creates the 0x2902 CCCD when NOTIFY is set (no BLE2902 needed)
-    pTxCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_TX, NIMBLE_PROPERTY::NOTIFY);
-    NimBLECharacteristic *pRxCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_RX, NIMBLE_PROPERTY::WRITE);
-    pRxCharacteristic->setCallbacks(new MyCallbacks());
-    // Start the server so the service is started automatically.
-    pServer->start();
-    // Start advertising
-    pServer->getAdvertising()->start();
-    Serial.println("Waiting a client connection to notify..");
+    NimBLEDevice::init(DEVICE_NAME);
+
+    server = NimBLEDevice::createServer();
+    server->setCallbacks(new ServerConnectionCallbacks());
+
+    NimBLEService* service = server->createService(SERVICE_UUID);
+    transmitCharacteristic = service->createCharacteristic(
+        TRANSMIT_CHARACTERISTIC_UUID,
+        NIMBLE_PROPERTY::NOTIFY);
+
+    NimBLECharacteristic* receiveCharacteristic = service->createCharacteristic(
+        RECEIVE_CHARACTERISTIC_UUID,
+        NIMBLE_PROPERTY::WRITE);
+    receiveCharacteristic->setCallbacks(new ReceiveCallbacks());
+
+    server->start();
+    server->getAdvertising()->start();
+    Serial.println("Bluetooth is waiting for a client");
 }
 
 void Bluetooth::loop()
 {
-    if (newDataAvailable)
-    {
-        newDataAvailable = false;
-
-        Serial.println("--- New Data Packet Recieved ---");
-        Serial.printf("Target Pin: %d\n", rxData.pin_num);
-        Serial.printf("State Set: %d\n", rxData.duty);
-        Serial.println("-----------------------------------");
-        HardwareController::setRemoteDuty(rxData.pin_num, rxData.duty);
-    }
-    if (deviceConnected)
-    {
-        if (Serial.available() > 0)
-        {
-            Serial.println("Device connected 1");
-            String serialString = Serial.readString();
-            Serial.println("Sending Value: " + serialString);
-            pTxCharacteristic->setValue(serialString.c_str());
-            pTxCharacteristic->notify();
-            delay(10); // bluetooth stack will go into congestion, if too many packets are sent
-        }
-    }
-    // disconnecting
-    if (!deviceConnected && oldDeviceConnected)
-    {
-        delay(500);                  // give the bluetooth stack the chance to get things ready
-        pServer->startAdvertising(); // restart advertising
-        Serial.println("Start advertising");
-        oldDeviceConnected = deviceConnected;
-    }
-    // connecting
-    if (deviceConnected && !oldDeviceConnected)
-    {
-        // do stuff here on connecting
-        oldDeviceConnected = deviceConnected;
-    }
+    processReceivedPacket();
+    transmitSerialInput();
+    updateAdvertisingState();
 }

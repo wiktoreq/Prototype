@@ -1,16 +1,16 @@
 #pragma once
-#include <Arduino.h>
-#include <TFT_eSPI.h>
-#include "Config.h"
-#include "consolab24.h"
 
-enum ButtonIcon {
+#include <TFT_eSPI.h>
+
+enum ButtonIcon
+{
     ICON_NONE = 0,
     ICON_DOWN = 1,
     ICON_UP   = 2
 };
 
-struct HorizontalSlider {
+struct HorizontalSlider
+{
     int16_t cardX;
     int16_t cardY;
     int16_t cardW;
@@ -27,7 +27,8 @@ struct HorizontalSlider {
     uint16_t fillColor;
 };
 
-struct TouchButton {
+struct TouchButton
+{
     int16_t x;
     int16_t y;
     int16_t w;
@@ -39,7 +40,8 @@ struct TouchButton {
     bool pressed;
 };
 
-class UiWidgets {
+class UiWidgets
+{
 public:
     // Allocates knob, percent, and button sprites (call once from setup).
     static void init(TFT_eSPI* tft);
@@ -91,6 +93,9 @@ private:
 
     // Converts a 0-100 slider value to the knob's screen-center X.
     static int16_t knobCenterX(const HorizontalSlider& slider, uint8_t value);
+
+    // Converts a slider value to its visible track-fill width.
+    static int16_t calculateFillWidth(const HorizontalSlider& slider);
 
     // Pushes a 34x34 track/fill patch over the previous knob position.
     static void restoreOldKnob(const HorizontalSlider& slider);

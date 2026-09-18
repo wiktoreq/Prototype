@@ -1,8 +1,7 @@
 #pragma once
+
 #include <stdint.h>
-#include "GpioInputs.h"
-#include "Pins.h"
-#include "PwmDriver.h"
+
 #include "UiControlState.h"
 
 namespace HardwareController
@@ -13,7 +12,7 @@ namespace HardwareController
     // Touchscreen event handlers.
     void setLightBrightness(uint8_t brightness);
     void toggleMute();
-    void toggleSleep();
+    void toggleLed();
     void setHeightSpeed(uint8_t speed);
     void setHeightDirection(bool contracting, bool retracting);
     void setPositionSpeed(uint8_t speed);

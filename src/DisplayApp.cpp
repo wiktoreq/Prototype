@@ -1,123 +1,149 @@
 #include "DisplayApp.h"
 
-#define CALIBRATION_FILE "/TouchCalData"
-#define REPEAT_CAL true
+#include <Arduino.h>
+#include <SPI.h>
+#include <TFT_eSPI.h>
 
-static TFT_eSPI tft = TFT_eSPI();
-static TopMenu topMenu(&tft);
-static MainMenu mainMenu(&tft);
-static ActuatorMenu heightMenu(&tft);
-static ActuatorMenu positionMenu(&tft);
+#include "FS.h"
+#include "SPIFFS.h"
 
-enum AppState {
-    STATE_MAIN = 0,
-    STATE_HEIGHT = 1,
-    STATE_POSITION = 2
+#include "ActuatorMenu.h"
+#include "Config.h"
+#include "HardwareController.h"
+#include "MainMenu.h"
+#include "Screen.h"
+#include "SystemPower.h"
+#include "TopMenu.h"
+#include "UiWidgets.h"
+
+namespace
+{
+constexpr char TOUCH_CALIBRATION_FILE[] = "/TouchCalData";
+constexpr bool FORCE_TOUCH_CALIBRATION = true;
+
+enum class AppScreen : uint8_t
+{
+    Main,
+    Height,
+    Position
 };
 
-static AppState currentState = STATE_MAIN;
-static Screen* currentScreen = &mainMenu;
-static bool touchWasActive = false;
+TFT_eSPI display;
+TopMenu topMenu(&display);
+MainMenu mainMenu(&display);
+ActuatorMenu heightMenu(&display);
+ActuatorMenu positionMenu(&display);
+Screen* activeScreen = &mainMenu;
+bool touchWasActive = false;
 
-static void switchToState(AppState newState);
-static void touch_calibrate();
+void configureUiEventHandlers()
+{
+    SystemPower::setDisplayPowerActions(DisplayApp::sleepOn, DisplayApp::sleepOff);
 
-// Maps a tab index to its content screen and draws that screen.
-static void switchToState(AppState newState) {
-    currentState = newState;
-    switch (currentState) {
-        case STATE_HEIGHT:
-            currentScreen = &heightMenu;
-            break;
-        case STATE_POSITION:
-            currentScreen = &positionMenu;
-            break;
-        case STATE_MAIN:
-        default:
-            currentScreen = &mainMenu;
-            break;
-    }
-    currentScreen->draw();
+    mainMenu.setEventHandlers(HardwareController::setLightBrightness,
+                              HardwareController::toggleLed,
+                              HardwareController::toggleMute);
+
+    heightMenu.setEventHandlers(HardwareController::setHeightSpeed,
+                                HardwareController::setHeightDirection);
+
+    positionMenu.setEventHandlers(HardwareController::setPositionSpeed,
+                                  HardwareController::setPositionDirection);
 }
 
-// Loads stored touch calibration or runs the on-screen calibration wizard.
-static void touch_calibrate() {
-    uint16_t calData[5];
-    uint8_t calDataOK = 0;
-
-    if (!SPIFFS.begin()) {
-        Serial.println("formatting file system");
-        SPIFFS.format();
-        SPIFFS.begin();
+void switchToScreen(AppScreen newScreen)
+{
+    if (newScreen == AppScreen::Height) {
+        activeScreen = &heightMenu;
+    } else if (newScreen == AppScreen::Position) {
+        activeScreen = &positionMenu;
+    } else {
+        activeScreen = &mainMenu;
     }
 
-    if (SPIFFS.exists(CALIBRATION_FILE)) {
-        if (REPEAT_CAL) {
-            SPIFFS.remove(CALIBRATION_FILE);
-        } else {
-            fs::File f = SPIFFS.open(CALIBRATION_FILE, "r");
-            if (f) {
-                if (f.readBytes((char*)calData, 14) == 14) {
-                    calDataOK = 1;
-                }
-                f.close();
-            }
-        }
-    }
+    activeScreen->draw();
+}
 
-    if (calDataOK && !REPEAT_CAL) {
-        tft.setTouch(calData);
+void mountFileSystem()
+{
+    if (SPIFFS.begin()) {
         return;
     }
 
-    tft.fillScreen(TFT_BLACK);
-    tft.setCursor(20, 0);
-    tft.setTextFont(2);
-    tft.setTextSize(1);
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    tft.println("Touch corners as indicated");
-    tft.setTextFont(1);
-    tft.println();
+    Serial.println("Formatting touch calibration file system");
+    SPIFFS.format();
+    SPIFFS.begin();
+}
 
-    if (REPEAT_CAL) {
-        tft.setTextColor(TFT_RED, TFT_BLACK);
-        tft.println("Set REPEAT_CAL to false to stop this running again!");
+bool loadTouchCalibration(uint16_t* calibrationData, size_t dataSize)
+{
+    if (!SPIFFS.exists(TOUCH_CALIBRATION_FILE)) {
+        return false;
     }
 
-    tft.calibrateTouch(calData, TFT_MAGENTA, TFT_BLACK, 15);
+    if (FORCE_TOUCH_CALIBRATION) {
+        SPIFFS.remove(TOUCH_CALIBRATION_FILE);
+        return false;
+    }
 
-    tft.setTextColor(TFT_GREEN, TFT_BLACK);
-    tft.println("Calibration complete!");
+    fs::File calibrationFile = SPIFFS.open(TOUCH_CALIBRATION_FILE, "r");
+    if (!calibrationFile) {
+        return false;
+    }
 
-    fs::File f = SPIFFS.open(CALIBRATION_FILE, "w");
-    if (f) {
-        f.write((const unsigned char*)calData, 14);
-        f.close();
+    size_t bytesRead = calibrationFile.readBytes(
+        reinterpret_cast<char*>(calibrationData),
+        dataSize);
+    calibrationFile.close();
+    return bytesRead == dataSize;
+}
+
+void saveTouchCalibration(const uint16_t* calibrationData, size_t dataSize)
+{
+    fs::File calibrationFile = SPIFFS.open(TOUCH_CALIBRATION_FILE, "w");
+    if (!calibrationFile) {
+        return;
+    }
+
+    calibrationFile.write(
+        reinterpret_cast<const unsigned char*>(calibrationData),
+        dataSize);
+    calibrationFile.close();
+}
+
+void showCalibrationInstructions()
+{
+    display.fillScreen(TFT_BLACK);
+    display.setCursor(20, 0);
+    display.setTextFont(2);
+    display.setTextSize(1);
+    display.setTextColor(TFT_WHITE, TFT_BLACK);
+    display.println("Touch corners as indicated");
+
+    if (FORCE_TOUCH_CALIBRATION) {
+        display.setTextColor(TFT_RED, TFT_BLACK);
+        display.println("Calibration will run again after restart");
     }
 }
 
-void DisplayApp::setup() {
-    
-    tft.init();
-    tft.setRotation(3);
-    tft.fillScreen(COLOR_BG);
+void configureTouchCalibration()
+{
+    uint16_t calibrationData[5] = {};
+    size_t calibrationDataSize = sizeof(calibrationData);
 
-    GpioInputs::setDisplaySleepHandlers(DisplayApp::sleepOn, DisplayApp::sleepOff);
-    mainMenu.setEventHandlers(HardwareController::setLightBrightness,
-                              HardwareController::toggleSleep,
-                              HardwareController::toggleMute);
-    heightMenu.setEventHandlers(HardwareController::setHeightSpeed,
-                                HardwareController::setHeightDirection);
-    positionMenu.setEventHandlers(HardwareController::setPositionSpeed,
-                                  HardwareController::setPositionDirection);
-
-    UiWidgets::init(&tft);
-
-    if (REPEAT_CAL) {
-        touch_calibrate();
-        tft.fillScreen(COLOR_BG);
+    mountFileSystem();
+    if (loadTouchCalibration(calibrationData, calibrationDataSize)) {
+        display.setTouch(calibrationData);
+        return;
     }
 
+    showCalibrationInstructions();
+    display.calibrateTouch(calibrationData, TFT_MAGENTA, TFT_BLACK, 15);
+    saveTouchCalibration(calibrationData, calibrationDataSize);
+}
+
+void configureMenus()
+{
     topMenu.addTab("Main");
     topMenu.addTab("Height");
     topMenu.addTab("Position");
@@ -127,52 +153,73 @@ void DisplayApp::setup() {
     mainMenu.init();
     heightMenu.init();
     positionMenu.init();
-
-    switchToState(STATE_MAIN);
+    switchToScreen(AppScreen::Main);
 }
 
-void DisplayApp::loop() {
+void handleMenuTouch(uint16_t touchX, uint16_t touchY)
+{
+    int selectedTab = topMenu.handleTouch(touchX, touchY);
+    if (selectedTab < 0) {
+        return;
+    }
+
+    activeScreen->handleRelease();
+    switchToScreen(static_cast<AppScreen>(selectedTab));
+}
+}
+
+void DisplayApp::setup()
+{
+    display.init();
+    display.setRotation(3);
+    display.fillScreen(COLOR_BG);
+
+    configureUiEventHandlers();
+    UiWidgets::init(&display);
+    configureTouchCalibration();
+    display.fillScreen(COLOR_BG);
+    configureMenus();
+}
+
+void DisplayApp::loop()
+{
     uint16_t touchX = 0;
     uint16_t touchY = 0;
-    const bool touched = tft.getTouch(&touchX, &touchY);
+    bool screenIsTouched = display.getTouch(&touchX, &touchY);
 
-    if (touched) {
+    if (screenIsTouched) {
         if (touchY <= MENU_HEIGHT) {
-            const int newTab = topMenu.handleTouch(touchX, touchY);
-            if (newTab != -1) {
-                currentScreen->handleRelease();
-                switchToState(static_cast<AppState>(newTab));
-            }
+            handleMenuTouch(touchX, touchY);
         } else {
-            currentScreen->handleTouch(touchX, touchY);
+            activeScreen->handleTouch(touchX, touchY);
         }
         touchWasActive = true;
-    } else if (touchWasActive) {
-        currentScreen->handleRelease();
+        return;
+    }
+
+    if (touchWasActive) {
+        activeScreen->handleRelease();
         touchWasActive = false;
     }
 }
 
-UiControlState DisplayApp::getControlState() {
-    UiControlState state;
-    state.screen = static_cast<UiControlState::Screen>(currentState);
+UiControlState DisplayApp::getControlState()
+{
+    UiControlState state = {};
     state.lightBrightness = mainMenu.getLightBrightness();
     state.heightSpeed = heightMenu.getSpeed();
-    state.heightContracting = (currentState == STATE_HEIGHT) && heightMenu.isContractPressed();
-    state.heightRetracting = (currentState == STATE_HEIGHT) && heightMenu.isRetractPressed();
     state.positionSpeed = positionMenu.getSpeed();
-    state.positionContracting = (currentState == STATE_POSITION) && positionMenu.isContractPressed();
-    state.positionRetracting = (currentState == STATE_POSITION) && positionMenu.isRetractPressed();
     return state;
 }
 
-void DisplayApp::sleepOn() {
-    
-    tft.writecommand(TFT_DISPOFF);
-    tft.writecommand(TFT_SLPIN);
+void DisplayApp::sleepOn()
+{
+    display.writecommand(TFT_DISPOFF);
+    display.writecommand(TFT_SLPIN);
 }
 
-void DisplayApp::sleepOff() {
-    tft.writecommand(TFT_DISPON);
-    tft.writecommand(TFT_SLPOUT);
+void DisplayApp::sleepOff()
+{
+    display.writecommand(TFT_DISPON);
+    display.writecommand(TFT_SLPOUT);
 }

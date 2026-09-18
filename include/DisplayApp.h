@@ -1,30 +1,21 @@
 #pragma once
-#include <Arduino.h>
-#include <TFT_eSPI.h>
-#include <SPI.h>
-#include "FS.h"
-#include "SPIFFS.h"
-#include "ActuatorMenu.h"
-#include "Config.h"
-#include "GpioInputs.h"
-#include "HardwareController.h"
-#include "MainMenu.h"
-#include "TopMenu.h"
+
 #include "UiControlState.h"
-#include "UiWidgets.h"
 
 namespace DisplayApp
 {
-    // Initializes the TFT, touch calibration, tab bar, and content screens.
+    // Initializes the display, touch input, menus, and UI event handlers.
     void setup();
 
-    // Polls the touchscreen and routes taps to the tab bar or active screen.
+    // Polls and routes touchscreen input.
     void loop();
 
+    // Returns the slider values needed to initialize hardware outputs.
+    UiControlState getControlState();
+
+    // Sends the display controller into sleep mode.
     void sleepOn();
 
+    // Wakes the display controller.
     void sleepOff();
-
-    // Returns the current knob values and hold-button flags for hardware.
-    UiControlState getControlState();
 }

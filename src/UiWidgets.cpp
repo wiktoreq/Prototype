@@ -28,6 +28,21 @@ int16_t UiWidgets::knobCenterX(const HorizontalSlider& slider, uint8_t value) {
     return slider.trackX + map(value, 0, 100, 0, slider.trackW);
 }
 
+// Converts a slider value to its visible track-fill width.
+int16_t UiWidgets::calculateFillWidth(const HorizontalSlider& slider) {
+    int16_t fillWidth = map(slider.value, 0, 100, 0, slider.trackW);
+
+    if (slider.value == 0) {
+        return 0;
+    }
+
+    if (fillWidth < slider.trackH) {
+        return slider.trackH;
+    }
+
+    return fillWidth;
+}
+
 // Allocates knob, percent, and button sprites (call once from setup).
 void UiWidgets::init(TFT_eSPI* tft) {
     if (display != nullptr) {
@@ -81,16 +96,9 @@ void UiWidgets::drawStaticTrack(TFT_eSPI* tft, const HorizontalSlider& slider) {
     tft->fillRoundRect(slider.trackX, slider.trackY, slider.trackW, slider.trackH,
                        radius, COLOR_TRACK);
 
-    int16_t fillW = map(slider.value, 0, 100, 0, slider.trackW);
-    if (fillW < slider.trackH) {
-        if (slider.value == 0) {
-            fillW = 0;
-        } else {
-            fillW = slider.trackH;
-        }
-    }
-    if (fillW > 0) {
-        tft->fillRoundRect(slider.trackX, slider.trackY, fillW, slider.trackH,
+    int16_t fillWidth = calculateFillWidth(slider);
+    if (fillWidth > 0) {
+        tft->fillRoundRect(slider.trackX, slider.trackY, fillWidth, slider.trackH,
                            radius, slider.fillColor);
     }
 }
@@ -122,16 +130,13 @@ void UiWidgets::restoreOldKnob(const HorizontalSlider& slider) {
     knobSprite->fillSprite(COLOR_SURFACE);
     knobSprite->fillRect(trackInSpriteX, trackY, slider.trackW, slider.trackH, COLOR_TRACK);
 
-    int16_t fillW = map(slider.value, 0, 100, 0, slider.trackW);
-    if (fillW < slider.trackH) {
-        if (slider.value == 0) {
-            fillW = 0;
-        } else {
-            fillW = slider.trackH;
-        }
-    }
-    if (fillW > 0) {
-        knobSprite->fillRect(trackInSpriteX, trackY, fillW, slider.trackH, slider.fillColor);
+    int16_t fillWidth = calculateFillWidth(slider);
+    if (fillWidth > 0) {
+        knobSprite->fillRect(trackInSpriteX,
+                             trackY,
+                             fillWidth,
+                             slider.trackH,
+                             slider.fillColor);
     }
 
     knobSprite->pushSprite(spriteX, spriteY);

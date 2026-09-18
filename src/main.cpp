@@ -21,7 +21,6 @@ void setup()
     PwmDriver::configure();
 
     Serial.begin(115200);
-    delay(10000);
 
     Bluetooth::configure();
     DisplayApp::setup();

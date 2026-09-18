@@ -17,7 +17,6 @@ constexpr int16_t CARD_RADIUS      = 12;
 constexpr int16_t BTN_RADIUS       = 12;
 constexpr int16_t SLIDER_TRACK_H   = 14;
 constexpr int16_t SLIDER_KNOB_R    = 16;
-constexpr int16_t TOUCH_HYSTERESIS = 3;
 
 // Main menu: external-light slider above LED power and mute buttons
 constexpr int16_t MAIN_CARD_H = 96;

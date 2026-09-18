@@ -6,7 +6,7 @@
 namespace
 {
 constexpr uint32_t PWM_FREQUENCY_HZ = 20000;
-constexpr uint8_t INITIAL_PWM_DUTY = 255;
+constexpr uint8_t INITIAL_PWM_DUTY = 0;
 
 void configureTimer()
 {

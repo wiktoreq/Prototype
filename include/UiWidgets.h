@@ -94,6 +94,9 @@ private:
     // Converts a 0-100 slider value to the knob's screen-center X.
     static int16_t knobCenterX(const HorizontalSlider& slider, uint8_t value);
 
+    // Converts a slider value to its visible track-fill width.
+    static int16_t calculateFillWidth(const HorizontalSlider& slider);
+
     // Pushes a 34x34 track/fill patch over the previous knob position.
     static void restoreOldKnob(const HorizontalSlider& slider);
 

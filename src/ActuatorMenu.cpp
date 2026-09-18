@@ -1,5 +1,7 @@
 #include "ActuatorMenu.h"
 
+#include "Config.h"
+
 ActuatorMenu::ActuatorMenu(TFT_eSPI* displayInstance)
     : display(displayInstance),
       speedChangedHandler(nullptr),

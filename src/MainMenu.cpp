@@ -1,5 +1,7 @@
 #include "MainMenu.h"
 
+#include "Config.h"
+
 MainMenu::MainMenu(TFT_eSPI* displayInstance)
     : display(displayInstance),
       brightnessChangedHandler(nullptr),
